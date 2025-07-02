@@ -1,0 +1,21 @@
+Summary:
+This module contains all essential Python imports used across the compiler infrastructure. By collecting imports centrally, it enforces modularity, reuse, and decoupling across tokenization, parsing, type-checking, and IR compilation. It uses Python 3.10+ standard modules to support strong typing (typing), data encapsulation (dataclasses), enum classification (enum), and regular expression parsing (re). Every submodule in this compiler pipeline assumes the availability of these imports, and as such, imports.py would typically be re-exported or partially imported across the rest.
+
+Design Rationale:
+In metaprogramming projects like DSL compilers, centralizing all required imports avoids version-specific breakages and clarifies third-party vs built-in dependencies.
+
+🔎 Functionality:
+re: Token regex compilation and matching.
+
+typing: Type annotations for clarity and IDE/linter support.
+
+Enum: Reserved for future token categorization expansion.
+
+dataclass: Enables quick, immutable object containers (e.g., Token).
+
+Code:
+
+import re
+from typing import List, Union, Tuple, Dict, Optional
+from enum import Enum
+from dataclasses import dataclass
