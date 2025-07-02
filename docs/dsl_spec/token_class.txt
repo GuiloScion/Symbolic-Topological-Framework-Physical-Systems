@@ -1,0 +1,25 @@
+Summary:
+The Token class encapsulates each recognized lexical unit with its type, value, and position in the original source. This position index is essential for compiler error reporting, especially in a DSL intended for symbolic or physical simulations.
+
+The __repr__ method provides readable debugging output to visualize each token's nature and location.
+
+Design Rationale:
+This structure mimics real-world compilers (e.g., GCC, Clang) where tokens must track both identity and location for clarity and robustness in downstream compiler stages (e.g., type checking).
+
+Functionality:
+type: Token category (e.g., COMMAND, NUMBER, etc.)
+
+value: Matched string from source input.
+
+position: Character index from the beginning of the source file.
+
+Code:
+
+@dataclass
+class Token:
+    type: str
+    value: str
+    position: int = 0  # Position in source for better error reporting
+
+    def __repr__(self):
+        return f"{self.type}:{self.value}@{self.position}"
