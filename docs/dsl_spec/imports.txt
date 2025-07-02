@@ -4,7 +4,7 @@ This module contains all essential Python imports used across the compiler infra
 Design Rationale:
 In metaprogramming projects like DSL compilers, centralizing all required imports avoids version-specific breakages and clarifies third-party vs built-in dependencies.
 
-🔎 Functionality:
+Functionality:
 re: Token regex compilation and matching.
 
 typing: Type annotations for clarity and IDE/linter support.
