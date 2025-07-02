@@ -1,0 +1,28 @@
+Summary:
+The tokenizer (also known as a lexical analyzer or scanner) takes raw DSL source code and splits it into a sequence of Token objects using the patterns defined in token_types.py. It skips over whitespace tokens and logs position indices for all meaningful tokens.
+
+This process is the first stage of compilation, critical for ensuring syntactic correctness before parsing or type-checking occurs.
+
+Design Rationale:
+The use of Python’s re.finditer offers efficient linear-time token extraction with capture group support. Only meaningful tokens are retained — whitespace is filtered out early to reduce parser overhead.
+
+Functionality:
+Accepts multiline DSL input as a string.
+
+Iterates through source using token_pattern.
+
+Skips "WHITESPACE".
+
+Outputs a list of Token objects for parser use.
+
+Code:
+
+def tokenize(source: str) -> List[Token]:
+    tokens = []
+    for match in token_pattern.finditer(source):
+        kind = match.lastgroup
+        value = match.group()
+        position = match.start()
+        if kind != "WHITESPACE":
+            tokens.append(Token(kind, value, position))
+    return tokens
