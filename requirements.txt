@@ -1,0 +1,13 @@
+numpy
+scipy
+sympy
+networkx
+pytest
+pylint
+flake8
+mypy
+jupyter
+sphinx
+sphinx_rtd_theme
+matplotlib
+plotly
