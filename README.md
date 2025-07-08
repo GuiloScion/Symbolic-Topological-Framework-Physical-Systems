@@ -6,7 +6,7 @@ Solving the fundamental challenges in physics and engineering requires not only 
 
 ## Project Vision & Motivation
 
-Traditional scientific computing often relies on numerical simulations that lack formal verification or transparent reasoning. Our framework addresses this by building a bridge between symbolic representations of physical laws, rigorous mathematical structures, and powerful AI methods. We envision a future where complex physical systems can be designed, analyzed, and controlled with formal guarantees.
+Traditional scientific computing often relies on numerical simulations that lack formal verification or transparent reasoning. This framework addresses this by building a bridge between symbolic representations of physical laws, rigorous mathematical structures, and powerful AI methods. I envision a future where complex physical systems can be designed, analyzed, and controlled with formal guarantees.
 
 ## Key Features (Current & Planned)
 
@@ -22,30 +22,3 @@ Traditional scientific computing often relies on numerical simulations that lack
 * **Phase 3: Symbolic Theorem Proving and Neural-Symbolic AI:** Integrating with formal theorem provers (e.g., Coq, Lean) and training physics-aware transformers for verifiable inference.
 * **Phase 4: Meta-Learned Control & Game-Theoretic Dynamics:** Synthesizing symbolic control policies for multi-agent physical systems with formal guarantees.
 * **Phase 5: Simulation, Visualization & Deployment:** Building an interactive simulation engine, advanced visualization tools, and deploying as an open-source platform.
-
-## Getting Started (Phase 1.1 Demo)
-
-To explore the current DSL compiler, follow these steps:
-
-1.  **Clone the repository:**
-    ```bash
-    git clone [https://github.com/GuiloScion/Symbolic-Topological-Framework.git](https://github.com/GuiloScion/Symbolic-Topological-Framework.git)
-    cd Symbolic-Topological-Framework/
-    ```
-2.  **Set up the environment (using Codespaces or locally):**
-    * **If using GitHub Codespaces:** The `.devcontainer` configuration will automatically set up the environment and install dependencies.
-    * **If running locally:**
-        ```bash
-        python3 -m venv venv
-        source venv/bin/activate
-        pip install -r requirements.txt
-        ```
-3.  **Run a basic example:**
-    ```bash
-    # This command will depend on your specific entry point.
-    # For now, it might be running one of your core compiler files directly for testing,
-    # or a dedicated 'main.py' you create in src/ or examples/.
-    # Example (adjust as per your code's entry point after modularization):
-    python src/dsl/parser.py # Or python src/main.py if you make an orchestrator
-    ```
-    *(You will need to adjust the `python` command above once you decide on your main execution script or example file.)*
