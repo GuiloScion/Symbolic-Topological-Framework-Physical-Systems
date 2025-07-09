@@ -5,8 +5,8 @@
 * @your-github-username # Replace with your GitHub username or team name
 
 # Specific folder ownership examples (adjust as you build out modules)
-/docs/theoretical_foundations/ @your-github-username
-/src/dsl/ @your-github-username
-/src/core_physics/thermodynamics/ @another-contributor-username
-/src/ai/ @ai-team-name # Example if you have a GitHub team
-/tests/ @your-github-username
+/docs/theoretical_foundations/ your-github-username
+/src/dsl/ your-github-username
+/src/core_physics/thermodynamics/ another-contributor-username
+/src/ai/ ai-team-name # Example if you have a GitHub team
+/tests/ your-github-username
