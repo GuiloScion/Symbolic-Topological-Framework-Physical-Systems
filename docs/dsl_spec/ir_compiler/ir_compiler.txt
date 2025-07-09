@@ -18,25 +18,3 @@ Features:
 CategoricalIR: stores objects (quantities), morphisms (laws), and functors (mappings).
 
 IRCompiler: traverses AST and builds morphisms like define_law, boundary_condition, symmetry_law.
-
-Code:
-(Excerpt below; complete in source)
-
-class CategoricalIR:
-    def __init__(self): ...
-    def add_object(self, name, properties): ...
-    def add_morphism(self, name, domain, codomain, desc, props): ...
-    def compose_morphisms(self, f_name, g_name): ...
-    def add_functor(...): ...
-
-class IRCompiler:
-    def __init__(self):
-        self.ir = CategoricalIR()
-
-    def compile(self, ast: List[ASTNode]):
-        # Convert AST to categorical IR
-        # Add morphisms and identity laws
-        self.pretty_print()
-
-    def expr_to_string(...): ...
-    def pretty_print(...): ...
