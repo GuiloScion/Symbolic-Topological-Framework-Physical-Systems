@@ -1,15 +1,16 @@
-# Examples
+# Welcome to the Symbolic Topological Framework Documentation!
 
-This section provides practical examples demonstrating how to use the Symbolic-Topological Framework. These examples illustrate various features and concepts discussed in the documentation.
+This is the main entry point for the project's comprehensive documentation. It provides insights into the theoretical foundations, system architecture, usage tutorials, and ongoing research for the framework.
 
-You can find all the example code and their respective READMEs directly in the project's `examples/` directory on GitHub.
+## Table of Contents
 
-* [View all examples on GitHub](https://github.com/GuiloScion/Symbolic-Topological-Framework-Physical-Systems/tree/main/examples)
+* [Theoretical Foundations](theoretical_foundations/README.md)
+* [DSL Specification](dsl_spec/README.md)
+* [Architecture Overview](architecture/README.md)
+* [Tutorials](tutorials/README.md)
+* [Research Notes](research_notes/README.md)
+* [API Reference](api/README.md) *(Note: This section will be auto-generated later from code comments)*
+* [Examples](examples/README.md) *(Note: This will link to the top-level examples README on GitHub)*
 
-### Individual Examples:
-
-* **Enhanced DSL Compiler Example:**
-    * [README for Enhanced DSL Compiler](https://github.com/GuiloScion/Symbolic-Topological-Framework-Physical-Systems/blob/main/examples/enhanced_compiler/README.md)
-    * [Python Code (`example_usage.py`)](https://github.com/GuiloScion/Symbolic-Topological-Framework-Physical-Systems/blob/main/examples/enhanced_compiler/example_usage.py)
-
-To run these examples, please clone the repository and follow the instructions in the respective README files.
+---
+This documentation is under active development. Your feedback and contributions are welcome!
