@@ -17,3 +17,10 @@ Navigate to the `examples/` folder in your project. Create a new file named `fir
 ## Step 3: Define a Simple Entity
 
 Open `first_entity.dsl` and add the following content:
+
+// Define a basic point particle
+DEFINE PointParticle {
+mass: Mass;
+position: Vector3D;
+}
+
