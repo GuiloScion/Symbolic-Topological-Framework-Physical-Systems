@@ -2,11 +2,11 @@
 # Each line is a file pattern followed by one or more owners.
 
 # Default owner for the entire repository
-* your-github-username # Replace with your GitHub username or team name
+* your-github # Replace with your GitHub username or team name
 
 # Specific folder ownership examples (adjust as you build out modules)
-/docs/theoretical_foundations/ your-github-username
+/docs/theoretical_foundations/ your-github
 /src/dsl/ your-github-username
-/src/core_physics/thermodynamics/ another-contributor-username
-/src/ai/ ai-team-name # Example if you have a GitHub team
-/tests/ your-github-username
+/src/core_physics/thermodynamics/ another-contributor
+/src/ai/ ai-team # Example if you have a GitHub team
+/tests/ your-github
