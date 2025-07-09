@@ -37,4 +37,3 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs/build/html # The directory where Sphinx built the HTML
           publish_branch: gh-pages # GitHub Pages will serve from this branch
-          cname: # Optional: Your custom domain if you have one, e.g., your-docs.example.com
