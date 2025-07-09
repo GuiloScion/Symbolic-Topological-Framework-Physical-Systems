@@ -1,0 +1,165 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DSL Grammar &mdash; Symbolic Topological Framework 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Symbolic Topological Framework
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">DSL Grammar</a><ul>
+<li><a class="reference internal" href="#syntax-overview">Syntax Overview</a><ul>
+<li><a class="reference internal" href="#basic-structure">Basic Structure</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Symbolic Topological Framework</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">DSL Grammar</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/dsl_spec/dsl_grammar.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="dsl-grammar">
+<h1>DSL Grammar<a class="headerlink" href="#dsl-grammar" title="Link to this heading"></a></h1>
+<p>This document outlines the grammar for the Symbolic Topological Framework’s Domain-Specific Language.</p>
+<section id="syntax-overview">
+<h2>Syntax Overview<a class="headerlink" href="#syntax-overview" title="Link to this heading"></a></h2>
+<p>The DSL is designed to be declarative, allowing users to describe physical systems, their components, and the relationships between them using a high-level syntax.</p>
+<section id="basic-structure">
+<h3>Basic Structure<a class="headerlink" href="#basic-structure" title="Link to this heading"></a></h3>
+<p>A typical DSL program will define entities, properties, relations, and processes.</p>
+<p>Formal Grammar (EBNF/BNF - detailed here later)</p>
+<div class="highlight-ebnf notranslate"><div class="highlight"><pre><span></span><span class="err">//</span> <span class="k">Placeholder for EBNF or ANTLR grammar</span>
+
+<span class="k">program </span><span class="o">=</span> <span class="p">{</span> <span class="k">statement </span><span class="p">}</span> <span class="p">;</span>
+<span class="k">statement </span><span class="o">=</span> <span class="k">define_statement </span><span class="p">|</span> <span class="k">system_statement </span><span class="p">|</span> <span class="k">process_statement </span><span class="p">;</span>
+
+<span class="k">define_statement </span><span class="o">=</span> <span class="s2">&quot;DEFINE&quot;</span> <span class="k">Identifier </span><span class="s2">&quot;{&quot;</span> <span class="p">{</span> <span class="k">property_definition </span><span class="p">}</span> <span class="s2">&quot;}&quot;</span> <span class="p">;</span>
+<span class="k">property_definition </span><span class="o">=</span> <span class="k">Identifier </span><span class="s2">&quot;:&quot;</span> <span class="k">Type </span><span class="s2">&quot;;&quot;</span> <span class="p">;</span>
+
+<span class="k">system_statement </span><span class="o">=</span> <span class="s2">&quot;SYSTEM&quot;</span> <span class="k">Identifier </span><span class="s2">&quot;{&quot;</span> <span class="p">{</span> <span class="k">entity_instantiation </span><span class="p">|</span> <span class="k">relation_definition </span><span class="p">}</span> <span class="s2">&quot;}&quot;</span> <span class="p">;</span>
+<span class="k">entity_instantiation </span><span class="o">=</span> <span class="s2">&quot;particle&quot;</span> <span class="k">Identifier </span><span class="s2">&quot;:&quot;</span> <span class="k">Type </span><span class="s2">&quot;{&quot;</span> <span class="p">{</span> <span class="k">assignment </span><span class="p">}</span> <span class="s2">&quot;}&quot;</span> <span class="p">;</span>
+
+<span class="err">//...</span> <span class="k">much more detail to be added here</span>
+
+<span class="k">Unit System</span>
+<span class="k">The DSL supports a strong unit system</span><span class="err">,</span> <span class="k">ensuring dimensional consistency throughout the symbolic computations</span><span class="err">.</span>
+
+<span class="k">Mass</span><span class="err">:</span> <span class="k">kg</span>
+
+<span class="k">Length</span><span class="err">:</span> <span class="k">m</span>
+
+<span class="k">Time</span><span class="err">:</span> <span class="k">s</span>
+
+<span class="err">...</span> <span class="err">(</span><span class="k">more details on units and conversions</span><span class="err">)</span>
+
+<span class="err">//</span> <span class="k">Example DSL Snippet </span><span class="err">(</span><span class="k">pseudocode-like</span><span class="err">)</span>
+
+<span class="k">DEFINE Particle </span><span class="err">{</span>
+<span class="k">mass</span><span class="err">:</span> <span class="k">Mass</span><span class="err">;</span>
+<span class="k">charge</span><span class="err">:</span> <span class="k">Charge</span><span class="err">;</span>
+<span class="k">position</span><span class="err">:</span> <span class="k">Vector3D</span><span class="err">;</span>
+<span class="err">}</span>
+
+<span class="k">SYSTEM MySystem </span><span class="err">{</span>
+<span class="k">particle P1 </span><span class="err">:</span> <span class="k">Particle </span><span class="err">{</span> <span class="k">mass</span><span class="o">=</span><span class="err">1</span><span class="k">kg</span><span class="p">,</span> <span class="k">charge</span><span class="err">=1</span><span class="k">C</span><span class="p">,</span> <span class="k">position</span><span class="err">=</span><span class="p">(</span><span class="err">0</span><span class="p">,</span><span class="err">0</span><span class="p">,</span><span class="err">0</span><span class="p">)</span> <span class="p">}</span>
+<span class="k">particle P2 </span><span class="err">:</span> <span class="k">Particle </span><span class="p">{</span> <span class="k">mass</span><span class="err">=2</span><span class="k">kg</span><span class="p">,</span> <span class="k">charge</span><span class="err">=0</span><span class="k">C</span><span class="p">,</span> <span class="k">position</span><span class="err">=</span><span class="p">(</span><span class="err">1</span><span class="p">,</span><span class="err">0</span><span class="p">,</span><span class="err">0</span><span class="p">)</span> <span class="p">}</span>
+
+  <span class="k">RELATION Force</span><span class="p">(</span><span class="k">P1</span><span class="p">,</span> <span class="k">P2</span><span class="p">)</span> <span class="o">-</span><span class="err">&gt;</span> <span class="k">Vector3D</span><span class="p">;</span>
+
+  <span class="k">PROCESS Gravity</span><span class="err">(</span><span class="k">P1</span><span class="err">,</span> <span class="k">P2</span><span class="err">)</span> <span class="err">{</span>
+      <span class="k">APPLY Force</span><span class="err">;</span>
+      <span class="k">CONSTRAINT P1</span><span class="err">.</span><span class="k">mass </span><span class="err">&gt;</span> <span class="err">0;</span>
+  <span class="err">}</span>
+<span class="err">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Noah Parsons or GuiloScion.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
