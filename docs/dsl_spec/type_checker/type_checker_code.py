@@ -1,5 +1,4 @@
-Code:
-(Excerpt below; complete in source)
+#(Excerpt below; complete in source)
 
 class TypeChecker:
     def __init__(self):
