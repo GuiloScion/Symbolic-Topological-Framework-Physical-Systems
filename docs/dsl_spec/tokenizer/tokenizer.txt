@@ -14,15 +14,3 @@ Iterates through source using token_pattern.
 Skips "WHITESPACE".
 
 Outputs a list of Token objects for parser use.
-
-Code:
-
-def tokenize(source: str) -> List[Token]:
-    tokens = []
-    for match in token_pattern.finditer(source):
-        kind = match.lastgroup
-        value = match.group()
-        position = match.start()
-        if kind != "WHITESPACE":
-            tokens.append(Token(kind, value, position))
-    return tokens
