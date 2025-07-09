@@ -12,14 +12,3 @@ type: Token category (e.g., COMMAND, NUMBER, etc.)
 value: Matched string from source input.
 
 position: Character index from the beginning of the source file.
-
-Code:
-
-@dataclass
-class Token:
-    type: str
-    value: str
-    position: int = 0  # Position in source for better error reporting
-
-    def __repr__(self):
-        return f"{self.type}:{self.value}@{self.position}"
