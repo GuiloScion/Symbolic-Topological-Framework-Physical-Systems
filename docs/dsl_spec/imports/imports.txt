@@ -12,10 +12,3 @@ typing: Type annotations for clarity and IDE/linter support.
 Enum: Reserved for future token categorization expansion.
 
 dataclass: Enables quick, immutable object containers (e.g., Token).
-
-Code:
-
-import re
-from typing import List, Union, Tuple, Dict, Optional
-from enum import Enum
-from dataclasses import dataclass
