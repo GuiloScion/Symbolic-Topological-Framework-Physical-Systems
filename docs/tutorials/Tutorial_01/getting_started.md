@@ -1,10 +1,9 @@
 ​Tutorial 1: Getting Started with the DSL
+
 This tutorial will guide you through your first steps in using the Symbolic Topological Framework's Domain-Specific Language (DSL). By the end of this tutorial, you will be able to define a simple physical entity.
 
 Prerequisites
 A working installation of the Symbolic Topological Framework (e.g., in a Codespace).
-​
-
 Basic familiarity with command-line operations.​
 
 Step 1: Open Your Workspace
