@@ -39,8 +39,9 @@ Step 4: (Future) Compile and Run (Conceptual)
 
 In a future step, you would run a command like this in your terminal:
 
+```
 python scripts/run_dsl.py examples/first_entity.dsl
-
+```
 
 This would compile your DSL definition and allow you to work with the PointParticle in the framework.
 
