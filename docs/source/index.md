@@ -4,12 +4,16 @@ This is the main entry point for the project's comprehensive documentation. It p
 
 ## Table of Contents
 
-* [Theoretical Foundations](theoretical_foundations/README.md)
-* [DSL Specification](dsl_spec/README.md)
-* [Architecture Overview](architecture/README.md)
-* [Tutorials](tutorials/README.md)
-* [Research Notes](research_notes/README.md)
-* [API Reference](api/README.md) *(Note: This section will be auto-generated later from code comments)*
+```{toctree}
+:maxdepth: 2
+:caption: Contents:
 
----
+theoretical_foundations/index
+dsl_specification/index
+architecture_overview/index
+tutorials/index
+research_notes/index
+api_reference/index
+examples/index
+
 This documentation is under active development. Your feedback and contributions are welcome!
