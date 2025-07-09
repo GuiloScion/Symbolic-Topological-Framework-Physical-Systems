@@ -27,7 +27,6 @@ Open first_entity.dsl and add the following content:
  position: Vector3D;
 
  }
-
 ```
 DEFINE PointParticle: This keyword is used to declare a new type of physical entity, PointParticle.
 
