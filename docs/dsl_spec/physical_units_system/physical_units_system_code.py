@@ -1,5 +1,3 @@
-Code:
-
 class Unit:
     def __init__(self, dimensions: Dict[str, int]):
         self.dimensions = dimensions
