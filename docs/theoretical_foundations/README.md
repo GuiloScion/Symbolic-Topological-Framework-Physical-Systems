@@ -7,7 +7,7 @@ This section provides the detailed mathematical and theoretical background for t
 * Sheaf Theory
 * Algebraic Topology
 * Differential Geometry
-* ... 
+* More will be added
 
 ---
 **Note:** This documentation is actively being developed.
