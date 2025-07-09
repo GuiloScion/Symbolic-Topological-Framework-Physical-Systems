@@ -19,4 +19,6 @@ These components must satisfy two axioms:
 A functor $F: \mathcal{C} \to \mathcal{D}$ between two categories $\mathcal{C}$ and $\mathcal{D}$ maps:
 * Objects of $\mathcal{C}$ to objects of $\mathcal{D}$.
 * Morphisms of $\mathcal{C}$ to morphisms of $\mathcal{D}$.
-... (continue with formal definitions and relevance to the framework)
+
+
+***Under development
