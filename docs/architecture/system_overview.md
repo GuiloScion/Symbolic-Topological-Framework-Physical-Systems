@@ -29,17 +29,17 @@ Data Flow
 
 ```mermaid
 graph TD
-    A[User Input (DSL)] --> B(DSL Frontend)
-    B --> C{Intermediate Representation (IR)}
+    A[User Input DSL] --> B(DSL Frontend)
+    B --> C{Intermediate Representation IR}
     C --> D(Core Physics Engine)
     C --> E(Topology Module)
     C --> F(AI Components)
     C --> G(Verification Module)
     C --> H(Control Module)
     C --> I(Simulation Engine)
-    D -- integrates with --> E
-    E -- integrates with --> I
+    D -.integrates with.-> E
+    E -.integrates with.-> I
     I --> J[Visualization]
-    F -- integrates with --> G
-    G -- integrates with --> D
-    H -- interacts with --> I
+    F -.integrates with.-> G
+    G -.integrates with.-> D
+    H -.interacts with.-> I
