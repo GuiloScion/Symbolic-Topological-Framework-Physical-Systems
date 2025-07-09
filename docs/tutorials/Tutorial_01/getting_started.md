@@ -24,3 +24,21 @@ mass: Mass;
 position: Vector3D;
 }
 
+
+* `DEFINE PointParticle`: This keyword is used to declare a new type of physical entity, `PointParticle`.
+* `mass: Mass;`: Declares a property named `mass` with the type `Mass` (from the built-in unit system).
+* `position: Vector3D;`: Declares a property named `position` with the type `Vector3D`.
+
+## Step 4: (Future) Compile and Run (Conceptual)
+
+*(Note: The actual compilation and running of DSL files will be implemented in `src/dsl` and `src/simulation` in later stages.)*
+
+In a future step, you would run a command like this in your terminal:
+```bash
+python scripts/run_dsl.py examples/first_entity.dsl
+
+This would compile your DSL definition and allow you to work with the PointParticle in the framework.
+
+Next Steps
+In the next tutorial, we'll explore how to instantiate these entities into a system and define relationships between them.
+
