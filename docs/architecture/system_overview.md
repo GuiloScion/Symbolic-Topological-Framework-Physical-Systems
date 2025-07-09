@@ -25,7 +25,7 @@ Data Flow
 
 
 
-## High-Level Diagram
+## Diagram
 
 ```mermaid
 graph TD
