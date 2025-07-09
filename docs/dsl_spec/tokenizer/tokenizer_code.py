@@ -1,5 +1,3 @@
-Code:
-
 def tokenize(source: str) -> List[Token]:
     tokens = []
     for match in token_pattern.finditer(source):
