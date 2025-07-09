@@ -20,15 +20,3 @@ First pass: collects all VarDefs into a symbol table.
 Second pass: checks unit compatibility in expressions and function definitions.
 
 Detects undefined variables in operators, boundaries, and symmetries.
-
-Code:
-(Excerpt below; complete in source)
-
-class TypeChecker:
-    def __init__(self):
-        self.variables = {}  # name -> (type, Unit)
-        self.operators = {}  # name -> signature
-
-    def get_unit(self, unit_str): ...
-    def check_expression_type(self, expr: Expression): ...
-    def check(self, ast: List[ASTNode]):
