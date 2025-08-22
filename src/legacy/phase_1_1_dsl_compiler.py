@@ -170,38 +170,38 @@ class Unit:
 
 # Standard units
 UNITS = {
-    "meter": Unit({"length": 1}),
-    "m": Unit({"length": 1}),
-    "second": Unit({"time": 1}),
-    "s": Unit({"time": 1}),
-    "kilogram": Unit({"mass": 1}),
-    "kg": Unit({"mass": 1}),
-    "kelvin": Unit({"temperature": 1}),
-    "K": Unit({"temperature": 1}),
-    "dimensionless": Unit({}),
-    "1": Unit({}),
-    "ampere": Unit({"current": 1}),
-    "A": Unit({"current": 1}),
-    "mole": Unit({"substance": 1}),
-    "mol": Unit({"substance": 1}),
-    "Candela": Unit({"luminous intensity": 1}),
-    "cd": Unit({"luminous intensity": 1}),
-    "Newton": Unit({"force": 1}),
-    "N": Unit({"force": 1}),
-    "Pascal": Unit({"pressure": 1}),
-    "Pa": Unit({"pressure": 1}),
-    "Watt": Unit({"power": 1}),
-    "W": Unit({"power": 1}),
-    "Hertz": Unit({"frequency: 1"}),
-    "Hz": Unit({"frequency": 1}),
-    "Farad": Unit({"capacitance": 1}),
-    "F": Unit({"capacitance": 1}),
-    "Weber": Unit({"magnetic flux": 1}),
-    "Wb": Unit({"magnetic flux": 1}),
-    "Coulomb": Unit({"electric charge": 1}),
-    "C": Unit({"electrig charge": 1}),
-    "Joule": Unit({"work": 1}),
-    "J": Unit({"work": 1}),
+    "meter": Unit({"length": 1}),                          # Meter
+    "m": Unit({"length": 1}),                              # Meter Abbreviation 
+    "second": Unit({"time": 1}),                           # Second
+    "s": Unit({"time": 1}),                                # Second Abbreviation
+    "kilogram": Unit({"mass": 1}),                         # Kilogram
+    "kg": Unit({"mass": 1}),                               # Kilogram Abbreviation
+    "kelvin": Unit({"temperature": 1}),                    # Kelvin
+    "K": Unit({"temperature": 1}),                         # Kelvin Abbreviation
+    "dimensionless": Unit({}),                             # Dimensionless
+    "1": Unit({}),                                         # Dimensionless Abbreviation
+    "ampere": Unit({"current": 1}),                        # Ampere
+    "A": Unit({"current": 1}),                             # Ampere Abbreviation
+    "mole": Unit({"substance": 1}),                        # Mole
+    "mol": Unit({"substance": 1}),                         # Mole Abbreviation
+    "Candela": Unit({"luminous intensity": 1}),            # Candela
+    "cd": Unit({"luminous intensity": 1}),                 # Candela Abbreviation
+    "Newton": Unit({"force": 1}),                          # Newton
+    "N": Unit({"force": 1}),                               # Newton Abbreviation
+    "Pascal": Unit({"pressure": 1}),                       # Pascal
+    "Pa": Unit({"pressure": 1}),                           # Pascal Abbreviation
+    "Watt": Unit({"power": 1}),                            # Watt
+    "W": Unit({"power": 1}),                               # Watt Abbreviation
+    "Hertz": Unit({"frequency: 1"}),                       # Hertz
+    "Hz": Unit({"frequency": 1}),                          # Hertz Abbreviation
+    "Farad": Unit({"capacitance": 1}),                     # Farad Abbreviation
+    "F": Unit({"capacitance": 1}),                         # Farad Abbreviation
+    "Weber": Unit({"magnetic flux": 1}),                   # Weber
+    "Wb": Unit({"magnetic flux": 1}),                      # Weber Abbreviation
+    "Coulomb": Unit({"electric charge": 1}),               # Coulomb
+    "C": Unit({"electrig charge": 1}),                     # Coulomb Abbreviation
+    "Joule": Unit({"work": 1}),                            # Joule
+    "J": Unit({"work": 1}),                                # Joule Abbreviation
     "energy": Unit({"mass": 1, "length": 2, "time": -2}),  # Joules
     "force": Unit({"mass": 1, "length": 1, "time": -2}),   # Newtons
 }
