@@ -32,6 +32,18 @@ TOKEN_TYPES = [
     ("NUMBER", r"\d+(\.\d+)?"),           # Integer or floating-point number
     ("IDENT", r"[a-zA-Z_][a-zA-Z0-9_]*"), # Identifier
     ("WHITESPACE", r"\s+"),               # Whitespace
+    ("PARTIAL", r"\\partial"),
+    ("NABLA", r"\\nabla"),
+    ("LAPLACIAN", r"\\laplacian"),
+    ("INTEGRAL", r"\\int"),
+    ("OINT", r"\\oint"),
+    ("VEC", r"\\vec"),
+    ("TENSOR", r"\\tensor"),
+    ("INITIAL", r"\\initial"),
+    ("PDE", r"\\pde"),
+    ("DOT", r"\."),
+    ("UNDERSCORE", r"_"),
+    ("PIPE", r"\|"),
 ]
 
 # Combine into one regex with named groups
@@ -137,8 +149,71 @@ class Symmetry(ASTNode):
 
     def __repr__(self):
         return f"Symmetry(law='{self.law}', invariant='{self.invariant}')"
+class DerivativeExpr(Expression):
+    def __init__(self, expr: Expression, var: str, order: int = 1):
+        self.expr = expr
+        self.var = var
+        self.order = order
+    
+    def __repr__(self):
+        return f"Derivative({self.expr}), {self.var}, order={self.order})"
 
-# === Physical Units System ===
+class GradientExpr(Expression): 
+    def __init__(self, expr: Expression):
+        self.expr = expr
+    
+    def __repr__(self):
+        return f"Gradient({self.expr})"
+
+class LaplacianExpr(Expression):
+    def __init__(self, expr: Expression):
+        self.expr = expr
+    
+    def __repr__(self):
+        return f"Laplacian({self.expr})"
+
+class IntegralExpr(Expression):
+    def __init__(self, expr: Expression, var: str, lower=None, upper=None):
+        self.expr = expr
+        self.var = var
+        self.lower = lower
+        self.upper = upper
+
+    def __repr__(self):
+        return f"Integral({self.expr}, {self.var}, {self.lower}, {self.upper})"
+
+class VectorExpr(Expression):
+    def __init__(self, expr: Expression):
+        self.expr = expr
+
+    def __repr__(self):
+        return f"Vector({self.expr})"
+    
+class TensorExpr(Expression):
+    def __init__(self, expr: Expression, indices: List[str]):
+        self.expr = expr
+        self.indices = indices
+    
+    def __repr__(self):
+        return f"Tensor({self.expr}, {self.indices})"
+
+class InitialCondition(ASTNode):
+    def __init__(self, var: str, expr: Expression):
+        self.var = var
+        self.expr = expr
+    
+    def __repr__(self):
+        return f"Initial({self.var} = {self.expr})"
+
+class PDEDef(ASTNode):
+    def __init__(self, equation: Expression):
+        self.equation = equation
+
+    def __repr__(self):
+        return f"PDE({self.equation})"
+    
+# Physical Units
+
 class Unit:
     def __init__(self, dimensions: Dict[str, int]):
         # Dimensions: mass, length, time, temperature, etc.
@@ -192,14 +267,14 @@ UNITS = {
     "Pa": Unit({"pressure": 1}),                           # Pascal Abbreviation
     "Watt": Unit({"power": 1}),                            # Watt
     "W": Unit({"power": 1}),                               # Watt Abbreviation
-    "Hertz": Unit({"frequency: 1"}),                       # Hertz
+    "Hertz": Unit({"frequency": 1}),                       # Hertz
     "Hz": Unit({"frequency": 1}),                          # Hertz Abbreviation
     "Farad": Unit({"capacitance": 1}),                     # Farad Abbreviation
     "F": Unit({"capacitance": 1}),                         # Farad Abbreviation
-    "Weber": Unit({"magnetic flux": 1}),                   # Weber
-    "Wb": Unit({"magnetic flux": 1}),                      # Weber Abbreviation
-    "Coulomb": Unit({"electric charge": 1}),               # Coulomb
-    "C": Unit({"electrig charge": 1}),                     # Coulomb Abbreviation
+    "Weber": Unit({"magnetic_flux": 1}),                   # Weber
+    "Wb": Unit({"magnetic_flux": 1}),                      # Weber Abbreviation
+    "Coulomb": Unit({"electric_charge": 1}),               # Coulomb
+    "C": Unit({"electric_charge": 1}),                     # Coulomb Abbreviation
     "Joule": Unit({"work": 1}),                            # Joule
     "J": Unit({"work": 1}),                                # Joule Abbreviation
     "energy": Unit({"mass": 1, "length": 2, "time": -2}),  # Joules
@@ -378,8 +453,11 @@ class Parser:
     def parse_symmetry(self) -> Symmetry:
         self.expect("COMMAND")  # \symmetry
         self.expect("LBRACE")
-        law = self.expect("IDENT").value
-        self.expect("COMMAND")  # \invariant
+        tokens_until_invariant = []
+        while self.peek() and self.peek().value != r"\invariant":
+            tokens_until_invariant.append(self.expect(self.peek().type).value)
+
+        self.expect("COMMAND")
         invariant = self.expect("IDENT").value
         self.expect("RBRACE")
         return Symmetry(law, invariant)
