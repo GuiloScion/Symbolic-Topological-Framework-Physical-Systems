@@ -5,7 +5,7 @@
 We take the security of Symbolic-Topological-Framework-Physical-Systems seriously. If you believe you have found a security vulnerability, please report it to us following these steps:
 
 1. **DO NOT** open a public GitHub issue about the vulnerability.
-2. Email your findings to [Your preferred contact email]. You can also reach out to @GuiloScion directly through GitHub's private vulnerability reporting feature.
+2. Email your findings to nomapa223@gmail.com. You can also reach out to @GuiloScion directly through GitHub's private vulnerability reporting feature.
 3. Provide as much information as possible about the vulnerability:
    - The type of issue (e.g., buffer overflow, SQL injection, or cross-site scripting)
    - Full paths of source file(s) related to the manifestation of the issue
@@ -23,11 +23,7 @@ We take the security of Symbolic-Topological-Framework-Physical-Systems seriousl
 
 ## Supported Versions
 
-We will release security patches for:
-
-| Version | Supported          |
-| ------- | ------------------ |
-| latest  | :white_check_mark: |
+We will release security patches for all versions
 
 ## Policy
 
