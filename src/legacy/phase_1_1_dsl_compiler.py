@@ -681,7 +681,7 @@ class IRCompiler:
         print(f" - Functors: {len(self.ir.functors)}")
 
 # === Example Usage ===
-def run_enhanced_compiler():
+def run_compiler():
     # DSL example with mathematical expressions
     dsl = r"""
     \defvar{T}{Real}{kelvin}
@@ -693,7 +693,7 @@ def run_enhanced_compiler():
     \symmetry{Noether \invariant energy}
     """
 
-    print("=== Enhanced DSL Compiler Demo ===")
+    print("=== DSL Compiler Demo ===")
     print(f"Source DSL:\n{dsl}")
 
     try:
@@ -722,6 +722,6 @@ def run_enhanced_compiler():
     except Exception as e:
         print(f"\n[ERROR] {type(e).__name__}: {e}")
 
-# Run the enhanced compiler
+# Run the compiler
 if __name__ == "__main__":
-    run_enhanced_compiler()
+    run_compiler()
