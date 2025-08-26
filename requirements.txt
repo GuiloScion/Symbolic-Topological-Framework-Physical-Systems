@@ -11,4 +11,3 @@ sphinx
 sphinx_rtd_theme
 matplotlib
 plotly
-pytorch
