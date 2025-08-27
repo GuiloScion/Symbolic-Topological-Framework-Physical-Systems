@@ -1,4 +1,4 @@
-```mermaid  
+```mermaid
 graph TD  
     subgraph "Simulation Pipeline"  
         subgraph "User Interaction and Setup"  
@@ -6,7 +6,7 @@ graph TD
             UI -->|System Selection| PE  
             UI -->|Interactive Controls| AV(Animation and Visualization)  
         end  
-
+  
         subgraph "Physics Engine"  
             PE -->|Solve Equations| EqSolver[Equation Solver]  
             PE -->|Manage Constraints| Constrain[Constraint Management]  
@@ -15,19 +15,19 @@ graph TD
             Constrain -->|Updated Positions| GR  
             Collision -->|Collision Data| GR  
         end  
-
+  
         subgraph "Graphics and Rendering"  
             GR -->|Object Models (Cylinders, Spheres)| Render[3D Rendering]  
             GR -->|Graphics Framework (Unity, WebGL)| Render  
             GR -->|Realistic Rendering| Render  
         end  
-
+  
         subgraph "Animation and Visualization"  
             Render --> AV  
             AV -->|Real-Time Animation| Display[Display Simulation]  
             AV -->|Trajectory Visualization| Display  
         end  
-
+  
         subgraph "Verification and Refinement"  
             PE --> Data[Data Exchange]  
             Data --> Consistency[Consistency Checks]  
