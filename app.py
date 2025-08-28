@@ -30,22 +30,34 @@ if st.button("Compile"):
         for node in ast:  
             st.write(node)  
   
-        # Step 4: Deriving Equations  
-        st.write("⚡ Deriving Equations of Motion...")  
-        symbolic_engine = SymbolicEngine()  # Instantiate SymbolicEngine  
-        equations = symbolic_engine.derive_equations_of_motion(ast)  # Call the method  
-        st.write("### Equations of Motion:")  
-        st.write(equations)  
+        # Step 4: Extract Coordinates  
+        coordinates = []  
+        for node in ast:  
+            if isinstance(node, VarDef) and node.vartype in ['Angle', 'Position', 'Coordinate']:  
+                coordinates.append(node.name)  
   
-        # Step 5: Running Simulation (if applicable)  
-        st.write("🔧 Running Simulation...")  
-        solution = run_simulation(equations)  # Assuming you have a function to run simulations  
-        if solution['success']:  
-            st.write("### Simulation Results:")  
-            st.line_chart(solution['y'])  # Plot simulation results  
-            st.write("Time:", solution['t'])  
+        if not coordinates:  
+            st.error("No valid coordinates found in the DSL.")  
         else:  
-            st.error("Simulation failed!")  
+            st.write("### Extracted Coordinates:")  
+            st.write(coordinates)  
+  
+            # Step 5: Deriving Equations  
+            st.write("⚡ Deriving Equations of Motion...")  
+            symbolic_engine = SymbolicEngine()  # Instantiate SymbolicEngine  
+            equations = symbolic_engine.derive_equations_of_motion(ast, coordinates)  # Call the method  
+            st.write("### Equations of Motion:")  
+            st.write(equations)  
+  
+            # Step 6: Running Simulation (if applicable)  
+            st.write("🔧 Running Simulation...")  
+            solution = run_simulation(equations)  # Assuming you have a function to run simulations  
+            if solution['success']:  
+                st.write("### Simulation Results:")  
+                st.line_chart(solution['y'])  # Plot simulation results  
+                st.write("Time:", solution['t'])  
+            else:  
+                st.error("Simulation failed!")  
   
     except Exception as e:  
         st.error(f"Error during parsing or simulation: {e}")  
