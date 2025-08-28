@@ -1,4 +1,11 @@
-numpy  
-sympy  
-matplotlib  
-scipy  
+streamlit
+numpy
+matplotlib
+sympy
+scipy
+plotly
+pandas
+numba
+scikit-learn
+streamlit-plotly-events
+streamlit-aggrid
