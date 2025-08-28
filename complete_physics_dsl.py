@@ -1538,9 +1538,3 @@ SIMPLE_PENDULUM_DSL = """
 \\solve{euler_lagrange}
 \\animate{pendulum}
 """
-
-# Double Pendulum
-DOUBLE_PENDULUM_DSL = """
-\\system{double_pendulum}
-
-\\defvar{theta1}{
