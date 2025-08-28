@@ -1,5 +1,5 @@
 import streamlit as st  
-from complete_physics_dsl import *  # Import everything from your backend module  
+from complete_physics_dsl.py import *  # Import everything from the backend  
   
 # Initialize the Streamlit app  
 st.title("Physics DSL Compiler")  
@@ -10,50 +10,44 @@ dsl_input = st.text_area("Enter your DSL code here:", height=200)
   
 # Compile button  
 if st.button("Compile"):  
+    # Step 1: Tokenization  
+    st.write("📝 Tokenizing...")  
+    tokens = tokenize(dsl_input)  # Call the tokenize function  
+    st.write(f"Found {len(tokens)} tokens:")  
+    for token in tokens:  
+        st.write(token)  
+  
+    # Step 2: Parsing  
+    st.write("🔍 Parsing the tokens...")  
     try:  
-        st.write("📝 Tokenizing...")  
-        tokens = tokenize(dsl_input)  # Call your tokenization function  
-        st.write(f"Found {len(tokens)} tokens:")  
-        for token in tokens:  
-            st.write(token)  
+        ast = parse(tokens)  # Call the parse function  
   
-        st.write("🔍 Parsing AST...")  
-        result = compile_dsl(dsl_input)  # Call the compile function  
+        # Step 3: Displaying the AST  
+        st.success("Parsing Successful!")  
+        st.write("### Generated AST Nodes:")  
+        for node in ast:  
+            st.write(node)  
   
-        if result['success']:  
-            st.success("Compilation Successful!")  
+        # Step 4: Deriving Equations (if applicable)  
+        equations = derive_equations(ast)  # Assuming you have a function for this  
+        st.write("### Equations of Motion:")  
+        st.write(equations)  
   
-            # Display the generated AST  
-            st.write("### Generated AST Nodes:")  
-            for node in result['ast']:  
-                st.write(node)  
-  
-            # Display equations of motion  
-            st.write("### Equations of Motion:")  
-            st.write(result['equations'])  
-  
-            # Run simulation if applicable  
-            if 'simulator' in result:  
-                st.write("🔧 Running Simulation...")  
-                solution = result['simulator'].simulate((0, 10))  # Example time span  
-                if solution['success']:  
-                    st.line_chart(solution['y'])  # Plot simulation results  
-                    st.write("### Simulation Results:")  
-                    st.write("Time:", solution['t'])  
-                    st.write("State Variables:", solution['state_vars'])  
-                else:  
-                    st.error("Simulation failed!")  
-  
-            # Energy analysis  
-            st.write("### Energy Analysis:")  
-            if 'energy' in result:  
-                st.write("Potential Energy:", result['energy']['potential'])  
-                st.write("Kinetic Energy:", result['energy']['kinetic'])  
-                st.write("Total Energy:", result['energy']['total'])  
-  
+        # Step 5: Running Simulation (if applicable)  
+        solution = run_simulation(equations)  # Assuming you have a function to run simulations  
+        if solution['success']:  
+            st.write("### Simulation Results:")  
+            st.line_chart(solution['y'])  # Plot simulation results  
+            st.write("Time:", solution['t'])  
         else:  
-            st.error("Compilation Failed!")  
-            st.write("Error:", result['error'])  
+            st.error("Simulation failed!")  
+  
+        # Display any additional results, like energy analysis  
+        if 'energy' in solution:  
+            st.write("### Energy Analysis:")  
+            st.write("Potential Energy:", solution['energy'].get('potential', 'N/A'))  
+            st.write("Kinetic Energy:", solution['energy'].get('kinetic', 'N/A'))  
+            st.write("Total Energy:", solution['energy'].get('total', 'N/A'))  
   
     except Exception as e:  
-        st.error(f"An error occurred: {e}")  
+        st.error(f"Error during parsing or simulation: {e}")  
