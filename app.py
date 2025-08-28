@@ -30,9 +30,10 @@ if st.button("Compile"):
         for node in ast:  
             st.write(node)  
   
-        # Step 4: Deriving Equations (if applicable)  
+        # Step 4: Deriving Equations  
         st.write("⚡ Deriving Equations of Motion...")  
-        equations = derive_equations(ast)  # Assuming you have a function for this  
+        symbolic_engine = SymbolicEngine()  # Instantiate SymbolicEngine  
+        equations = symbolic_engine.derive_equations_of_motion(ast)  # Call the method  
         st.write("### Equations of Motion:")  
         st.write(equations)  
   
@@ -43,16 +44,8 @@ if st.button("Compile"):
             st.write("### Simulation Results:")  
             st.line_chart(solution['y'])  # Plot simulation results  
             st.write("Time:", solution['t'])  
-            st.write("State Variables:", solution['state_vars'])  
         else:  
             st.error("Simulation failed!")  
-  
-        # Display any additional results, like energy analysis  
-        if 'energy' in solution:  
-            st.write("### Energy Analysis:")  
-            st.write("Potential Energy:", solution['energy'].get('potential', 'N/A'))  
-            st.write("Kinetic Energy:", solution['energy'].get('kinetic', 'N/A'))  
-            st.write("Total Energy:", solution['energy'].get('total', 'N/A'))  
   
     except Exception as e:  
         st.error(f"Error during parsing or simulation: {e}")  
