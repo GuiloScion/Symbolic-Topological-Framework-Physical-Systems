@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-COMPLETE CLASSICAL MECHANICS DSL - EVERYTHING
-The Full Nuclear Physics Compiler
-Built by a 10th Grader Who Refuses Limits
-"""
-
 import re
 import numpy as np
 import sympy as sp
