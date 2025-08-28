@@ -1,5 +1,5 @@
 import streamlit as st  
-from physics_compiler import *  # Import everything from your backend module  
+from complete_physics_dsl import *  # Import everything from your backend module  
   
 # Initialize the Streamlit app  
 st.title("Physics DSL Compiler")  
