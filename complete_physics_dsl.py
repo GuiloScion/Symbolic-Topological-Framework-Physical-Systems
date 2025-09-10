@@ -11,9 +11,9 @@ from enum import Enum
 import json
 import time
 
-# ===========================
-# ENHANCED TOKEN SYSTEM
-# ===========================
+# ============
+# TOKEN SYSTEM
+# ============
 
 TOKEN_TYPES = [
     # Original tokens
@@ -362,9 +362,9 @@ BASE_UNITS = {
     "k_B": Unit({"mass": 1, "length": 2, "time": -2, "temperature": -1}, scale=1.381e-23),
 }
 
-# ===========================
-# NUCLEAR PARSER ENGINE
-# ===========================
+# ==============
+# PARSER ENGINE
+# =============
 
 class MechanicsParser:
     def __init__(self, tokens: List[Token]):
