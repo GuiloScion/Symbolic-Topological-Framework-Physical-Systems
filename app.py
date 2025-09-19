@@ -1,5 +1,5 @@
 import streamlit as st  
-from complete_physics_dsl import *  # Import everything from your backend module  
+from complete_physics_dsl import *  
 
 st.set_page_config(page_title="Physics DSL Compiler", layout="wide")
 st.title("Physics DSL Compiler")
@@ -31,23 +31,21 @@ if st.button("Compile & Simulate"):
         st.error(f"Parsing error: {e}")
         st.stop()
 
-    # Step 3: Extract coordinates (robust logic)
+    # Step 3: Extract coordinates (case-insensitive, substring match)
     st.write("### Extracting Physical Coordinates")
     coordinates = []
+    COORD_SUBSTRINGS = ["angle", "position", "coordinate"]
     for node in ast:
-        # Check if it's a VarDef
         if isinstance(node, VarDef):
-            if (
-                hasattr(node, "vartype")
-                and str(node.vartype).strip().lower() in ['angle', 'position', 'coordinate']
-            ):
+            vartype = str(getattr(node, "vartype", "")).strip().lower()
+            # Accept substrings, not just exact match
+            if any(sub in vartype for sub in COORD_SUBSTRINGS):
                 coordinates.append(node.name)
-            # Also consider vector coordinates
-            elif hasattr(node, "vector") and node.vector:
+            elif getattr(node, "vector", False):
                 coordinates.append(node.name + " (vector)")
     if not coordinates:
         st.error("No valid coordinates found in the DSL. See node details above for troubleshooting.")
-        st.info("If you believe this is a bug, check your VarDef nodes in the AST dump above.")
+        st.info("Check your \\defvar definitions and the AST dump above.")
         st.stop()
     else:
         st.success("Coordinates extracted:")
