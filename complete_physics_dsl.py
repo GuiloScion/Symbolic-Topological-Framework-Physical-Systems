@@ -152,6 +152,7 @@ class GreekLetterExpr(Expression):
     def __repr__(self):
         return f"Greek({self.letter})"
 
+# NEW: Derivative variable expression for \dot{x} and \ddot{x}
 class DerivativeVarExpr(Expression):
     def __init__(self, var: str, order: int = 1):
         self.var = var
@@ -676,13 +677,12 @@ class MechanicsParser:
 
     def parse_primary(self) -> Expression:
         """Primary expressions: literals, identifiers, parentheses, vectors"""
-        
+
         # Numbers
         if self.match("NUMBER"):
             return NumberExpr(float(self.tokens[self.pos - 1].value))
 
-        def parse_primary(self) -> Expression:
-   
+        # NEW: Handle \dot{IDENT} and \ddot{IDENT} as tokens, not just as commands!
         if self.match("DOT_NOTATION"):
             self.expect("LBRACE")
             var = self.expect("IDENT").value
@@ -693,22 +693,22 @@ class MechanicsParser:
             var = self.expect("IDENT").value
             self.expect("RBRACE")
             return DerivativeVarExpr(var, 2)
-        
+
         # Identifiers
         if self.match("IDENT"):
             return IdentExpr(self.tokens[self.pos - 1].value)
-        
+
         # Greek letters
         if self.match("GREEK_LETTER"):
             letter = self.tokens[self.pos - 1].value[1:]  # Remove backslash
             return GreekLetterExpr(letter)
-        
+
         # Parentheses
         if self.match("LPAREN"):
             expr = self.parse_expression()
             self.expect("RPAREN")
             return expr
-        
+
         # Vectors [x, y, z]
         if self.match("LBRACKET"):
             components = []
@@ -717,12 +717,12 @@ class MechanicsParser:
                 components.append(self.parse_expression())
             self.expect("RBRACKET")
             return VectorExpr(components)
-        
+
         # Commands (LaTeX-style functions)
         if self.match("COMMAND"):
             cmd = self.tokens[self.pos - 1].value
             return self.parse_command(cmd)
-        
+
         # Mathematical constants
         if self.peek() and self.peek().value in ["pi", "e"]:
             const = self.expect("IDENT").value
@@ -730,7 +730,7 @@ class MechanicsParser:
                 return NumberExpr(np.pi)
             elif const == "e":
                 return NumberExpr(np.e)
-        
+
         current = self.peek()
         if current:
             raise SyntaxError(f"Unexpected token {current.type} '{current.value}' at {current.line}:{current.column}")
@@ -850,15 +850,6 @@ class SymbolicEngine:
         
         if isinstance(expr, NumberExpr):
             return sp.Float(expr.value)
-
-        elif isinstance(expr, DerivativeVarExpr):
-            # Map DerivativeVar(theta, 1) to theta_dot, DerivativeVar(theta, 2) to theta_ddot
-            if expr.order == 1:
-                return self.get_symbol(f"{expr.var}_dot")
-            elif expr.order == 2:
-                return self.get_symbol(f"{expr.var}_ddot")
-            else:
-                raise ValueError("Only first and second order derivatives are supported")
             
         elif isinstance(expr, IdentExpr):
             return self.get_symbol(expr.name)
@@ -891,6 +882,15 @@ class SymbolicEngine:
                 return operand
             else:
                 raise ValueError(f"Unknown unary operator: {expr.operator}")
+
+        # NEW: Convert DerivativeVarExpr to a _dot or _ddot symbol
+        elif isinstance(expr, DerivativeVarExpr):
+            if expr.order == 1:
+                return self.get_symbol(f"{expr.var}_dot")
+            elif expr.order == 2:
+                return self.get_symbol(f"{expr.var}_ddot")
+            else:
+                raise ValueError("Only first and second order derivatives are supported")
                 
         elif isinstance(expr, DerivativeExpr):
             inner = self.ast_to_sympy(expr.expr)
