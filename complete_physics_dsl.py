@@ -15,17 +15,67 @@ import time
 # TOKEN SYSTEM
 # ============
 
+import re
+import numpy as np
+import sympy as sp
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from mpl_toolkits.mplot3d import Axes3D
+from scipy.integrate import solve_ivp
+from typing import List, Dict, Optional, Tuple, Any, Union
+from dataclasses import dataclass
+from enum import Enum
+import json
+import time
+
+# ============
+# TOKEN SYSTEM
+# ============
+
 TOKEN_TYPES = [
-    # Original tokens
+    # Physics specific -- PUT THESE FIRST!
+    ("SYSTEM", r"\\system"),
+    ("DEFVAR", r"\\defvar"),
+    ("DEFINE", r"\\define"),
+    ("LAGRANGIAN", r"\\lagrangian"),
+    ("HAMILTONIAN", r"\\hamiltonian"),
+    ("TRANSFORM", r"\\transform"),
+    ("CONSTRAINT", r"\\constraint"),
+    ("INITIAL", r"\\initial"),
+    ("SOLVE", r"\\solve"),
+    ("ANIMATE", r"\\animate"),
+    ("PLOT", r"\\plot"),
+    # Vector operations
+    ("VEC", r"\\vec"),
+    ("HAT", r"\\hat"),
+    ("MAGNITUDE", r"\\mag|\\norm"),
+    # Time derivatives
+    ("DOT_NOTATION", r"\\dot"),
+    ("DDOT_NOTATION", r"\\ddot"),
+    # Advanced math operators
+    ("VECTOR_DOT", r"\\cdot|\\dot"),
+    ("VECTOR_CROSS", r"\\times|\\cross"),
+    ("GRADIENT", r"\\nabla|\\grad"),
+    ("DIVERGENCE", r"\\div"),
+    ("CURL", r"\\curl"),
+    ("LAPLACIAN", r"\\laplacian|\\Delta"),
+    # Calculus
+    ("PARTIAL", r"\\partial"),
+    ("INTEGRAL", r"\\int"),
+    ("OINT", r"\\oint"),
+    ("SUM", r"\\sum"),
+    ("LIMIT", r"\\lim"),
+    # Greek letters (put before COMMAND so they don't get gobbled!)
     ("GREEK_LETTER", r"\\alpha|\\beta|\\gamma|\\delta|\\epsilon|\\zeta|\\eta|\\theta|\\iota|\\kappa|\\lambda|\\mu|\\nu|\\xi|\\omicron|\\pi|\\rho|\\sigma|\\tau|\\upsilon|\\phi|\\chi|\\psi|\\omega"),
+    # General commands -- MUST BE AFTER ALL SPECIFIC TOKENS!
     ("COMMAND", r"\\[a-zA-Z_][a-zA-Z0-9_]*"),
+    # Brackets and grouping
     ("LBRACE", r"\{"),
     ("RBRACE", r"\}"),
     ("LPAREN", r"\("),
     ("RPAREN", r"\)"),
     ("LBRACKET", r"\["),
     ("RBRACKET", r"\]"),
-    
     # Mathematical operators
     ("PLUS", r"\+"),
     ("MINUS", r"-"),
@@ -38,44 +88,6 @@ TOKEN_TYPES = [
     ("DOT", r"\."),
     ("UNDERSCORE", r"_"),
     ("PIPE", r"\|"),
-    
-    # Advanced math operators
-    ("VECTOR_DOT", r"\\cdot|\\dot"),
-    ("VECTOR_CROSS", r"\\times|\\cross"),
-    ("GRADIENT", r"\\nabla|\\grad"),
-    ("DIVERGENCE", r"\\div"),
-    ("CURL", r"\\curl"),
-    ("LAPLACIAN", r"\\laplacian|\\Delta"),
-    
-    # Calculus
-    ("PARTIAL", r"\\partial"),
-    ("INTEGRAL", r"\\int"),
-    ("OINT", r"\\oint"),
-    ("SUM", r"\\sum"),
-    ("LIMIT", r"\\lim"),
-    
-    # Physics specific
-    ("SYSTEM", r"\\system"),
-    ("DEFVAR", r"\\defvar"),
-    ("DEFINE", r"\\define"),
-    ("LAGRANGIAN", r"\\lagrangian"),
-    ("HAMILTONIAN", r"\\hamiltonian"),
-    ("TRANSFORM", r"\\transform"),
-    ("CONSTRAINT", r"\\constraint"),
-    ("INITIAL", r"\\initial"),
-    ("SOLVE", r"\\solve"),
-    ("ANIMATE", r"\\animate"),
-    ("PLOT", r"\\plot"),
-    
-    # Vector operations
-    ("VEC", r"\\vec"),
-    ("HAT", r"\\hat"),
-    ("MAGNITUDE", r"\\mag|\\norm"),
-    
-    # Time derivatives
-    ("DOT_NOTATION", r"\\dot"),
-    ("DDOT_NOTATION", r"\\ddot"),
-    
     # Basic tokens
     ("NUMBER", r"\d+\.?\d*([eE][+-]?\d+)?"),
     ("IDENT", r"[a-zA-Z_][a-zA-Z0-9_]*"),
