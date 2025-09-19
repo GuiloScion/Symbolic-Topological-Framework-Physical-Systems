@@ -28,20 +28,27 @@ if st.button("Compile"):
         # Step 3: Displaying the AST  
         st.write("### Generated AST Nodes:")  
         for node in ast:  
-            st.write(type(node), vars(node))  # More detailed AST node printout  
+            st.write(type(node).__name__, vars(node))  # Show type and attributes for each node  
 
-        # Step 4: Extract Coordinates (robust matching)
-        coordinates = []  
-        for node in ast:  
-            if (isinstance(node, VarDef) and  
-                str(getattr(node, "vartype", "")).strip().lower() in ['angle', 'position', 'coordinate']):  
-                coordinates.append(node.name)  
+        # Step 4: Extract Coordinates (robust matching and diagnostic)
+        coordinates = []
+        coordinate_types = ['angle', 'position', 'coordinate']
+        for node in ast:
+            attrs = vars(node)
+            found = False
+            for key, value in attrs.items():
+                if str(value).strip().lower() in coordinate_types:
+                    coordinates.append(attrs.get('name', 'unknown'))
+                    found = True
+            # Optional: diagnostic info
+            if not found:
+                st.write(f"No coordinate type found in {type(node).__name__} node with attributes:", attrs)
 
-        if not coordinates:  
-            st.error("No valid coordinates found in the DSL.")  
-        else:  
-            st.write("### Extracted Coordinates:")  
-            st.write(coordinates)  
+        if not coordinates:
+            st.error("No valid coordinates found in the DSL.")
+        else:
+            st.write("### Extracted Coordinates:")
+            st.write(coordinates)
 
             # Step 5: Deriving Equations  
             st.write("⚡ Deriving Equations of Motion...")  
