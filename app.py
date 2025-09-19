@@ -1,5 +1,5 @@
 import streamlit as st
-from complete_physics_dsl import PhysicsCompiler
+from complete_physics_dsl import *
 
 st.set_page_config(page_title="Physics DSL Compiler", layout="wide")
 st.title("Physics DSL Compiler")
@@ -18,7 +18,11 @@ EXAMPLE_DSL = r"""
 \animate{pendulum}
 """
 
-dsl_input = st.text_area("Enter your DSL code here:", value=EXAMPLE_DSL, height=300)
+dsl_input = st.text_area(
+    "Enter your DSL code here:",
+    value=EXAMPLE_DSL,
+    height=300
+)
 
 if st.button("Compile & Simulate"):
     st.write("🚀 Compiling Physics DSL...")
