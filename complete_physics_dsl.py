@@ -15,23 +15,6 @@ import time
 # TOKEN SYSTEM
 # ============
 
-import re
-import numpy as np
-import sympy as sp
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from mpl_toolkits.mplot3d import Axes3D
-from scipy.integrate import solve_ivp
-from typing import List, Dict, Optional, Tuple, Any, Union
-from dataclasses import dataclass
-from enum import Enum
-import json
-import time
-
-# ============
-# TOKEN SYSTEM
-# ============
-
 TOKEN_TYPES = [
     # Physics specific -- PUT THESE FIRST!
     ("SYSTEM", r"\\system"),
@@ -168,6 +151,13 @@ class GreekLetterExpr(Expression):
         self.letter = letter
     def __repr__(self):
         return f"Greek({self.letter})"
+
+class DerivativeVarExpr(Expression):
+    def __init__(self, var: str, order: int = 1):
+        self.var = var
+        self.order = order
+    def __repr__(self):
+        return f"DerivativeVar({self.var}, order={self.order})"
 
 # Binary operations
 class BinaryOpExpr(Expression):
@@ -690,6 +680,22 @@ class MechanicsParser:
         # Numbers
         if self.match("NUMBER"):
             return NumberExpr(float(self.tokens[self.pos - 1].value))
+
+        def parse_primary(self) -> Expression:
+   
+         # Time derivative tokens
+        if self.match("DOT_NOTATION"):
+        # \dot{IDENT}
+           self.expect("LBRACE")
+           var = self.expect("IDENT").value
+           self.expect("RBRACE")
+           return DerivativeVarExpr(var, 1)
+        if self.match("DDOT_NOTATION"):
+            # \ddot{IDENT}
+           self.expect("LBRACE")
+           var = self.expect("IDENT").value
+           self.expect("RBRACE")
+           return DerivativeVarExpr(var, 2)
         
         # Identifiers
         if self.match("IDENT"):
@@ -853,6 +859,14 @@ class SymbolicEngine:
             
         elif isinstance(expr, GreekLetterExpr):
             return self.get_symbol(expr.letter)
+            
+        elif isinstance(expr, DerivativeVarExpr):
+             if expr.order == 1:
+           return self.get_symbol(f"{expr.var}_dot")
+        elif expr.order == 2:
+            return self.get_symbol(f"{expr.var}_ddot")
+        else:
+            raise ValueError("Only first and second order derivatives are supported")
             
         elif isinstance(expr, BinaryOpExpr):
             left = self.ast_to_sympy(expr.left)
