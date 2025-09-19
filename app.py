@@ -1,77 +1,34 @@
-import streamlit as st  
-from complete_physics_dsl import *  
+import streamlit as st
+from complete_physics_dsl import *
 
-st.set_page_config(page_title="Physics DSL Compiler", layout="wide")
-st.title("Physics DSL Compiler")
-st.write("Compile your DSL, view the AST, extract coordinates, derive equations, and simulate results.")
+st.title("Physics DSL Compiler (Debug Mode)")
 
-dsl_input = st.text_area("Enter your DSL code here:", height=200)  
+dsl_input = st.text_area("Enter your DSL code here:", height=200, value="""\\system{simple_pendulum} \\defvar{theta}{Angle}{rad} \\defvar{m}{Mass}{kg} \\defvar{l}{Length}{m} \\defvar{g}{Acceleration}{m/s^2} \\define{\\op{kinetic}(m, l, theta_dot) = 0.5 * m * l^2 * theta_dot^2} \\define{\\op{potential}(m, g, l, theta) = m * g * l * (1 - \\cos{theta})} \\lagrangian{kinetic(m, l, \\dot{theta}) - potential(m, g, l, theta)} \\initial{theta=0.5, theta_dot=0} \\solve{euler_lagrange} \\animate{pendulum}""")
 
-if st.button("Compile & Simulate"):
+if st.button("Compile & Debug"):
     # Step 1: Tokenization
-    try:
-        st.write("📝 Tokenizing...")
-        tokens = tokenize(dsl_input)
-        st.write(f"Found {len(tokens)} tokens:")
-        st.json([str(token) for token in tokens])
-    except Exception as e:
-        st.error(f"Tokenization error: {e}")
-        st.stop()
+    st.write("📝 Tokenizing...")
+    tokens = tokenize(dsl_input)
+    st.write(f"Tokens ({len(tokens)}):")
+    for t in tokens:
+        st.write(repr(t))
 
     # Step 2: Parsing
-    try:
-        st.write("🔍 Parsing the tokens...")
-        parser = MechanicsParser(tokens)
-        ast = parser.parse()
-        st.success("Parsing Successful!")
-        st.write("### Generated AST Nodes (Full Attribute Dump):")
-        for node in ast:
-            st.json({"type": type(node).__name__, **vars(node)})
-    except Exception as e:
-        st.error(f"Parsing error: {e}")
-        st.stop()
+    st.write("🔍 Parsing the tokens...")
+    parser = MechanicsParser(tokens)
+    ast = parser.parse()
+    st.write("AST node count:", len(ast))
+    st.write("Raw AST value:", ast)
+    st.write("### AST Node Dumps:")
+    for node in ast:
+        st.json({"type": type(node).__name__, **vars(node)})
 
-    # Step 3: Extract coordinates (case-insensitive, substring match)
-    st.write("### Extracting Physical Coordinates")
+    # Step 3: Coordinates extraction (case-insensitive, substring match)
     coordinates = []
     COORD_SUBSTRINGS = ["angle", "position", "coordinate"]
     for node in ast:
         if isinstance(node, VarDef):
             vartype = str(getattr(node, "vartype", "")).strip().lower()
-            # Accept substrings, not just exact match
             if any(sub in vartype for sub in COORD_SUBSTRINGS):
                 coordinates.append(node.name)
-            elif getattr(node, "vector", False):
-                coordinates.append(node.name + " (vector)")
-    if not coordinates:
-        st.error("No valid coordinates found in the DSL. See node details above for troubleshooting.")
-        st.info("Check your \\defvar definitions and the AST dump above.")
-        st.stop()
-    else:
-        st.success("Coordinates extracted:")
-        st.write(coordinates)
-
-    # Step 4: Derive equations
-    try:
-        st.write("⚡ Deriving Equations of Motion...")
-        symbolic_engine = SymbolicEngine()
-        equations = symbolic_engine.derive_equations_of_motion(ast, coordinates)
-        st.write("### Equations of Motion:")
-        st.write(equations)
-    except Exception as e:
-        st.error(f"Equation derivation error: {e}")
-        st.stop()
-
-    # Step 5: Run simulation
-    try:
-        st.write("🔧 Running Simulation...")
-        solution = run_simulation(equations)
-        if solution.get('success'):
-            st.write("### Simulation Results:")
-            st.line_chart(solution['y'])
-            st.write("Time:", solution['t'])
-        else:
-            st.error("Simulation failed!")
-            st.json(solution)
-    except Exception as e:
-        st.error(f"Simulation error: {e}")
+    st.write("Extracted coordinates:", coordinates)
