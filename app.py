@@ -1,16 +1,16 @@
-import streamlit as st
-from complete_physics_dsl import *
+import streamlit as st  
+from complete_physics_dsl import *  # Import everything from your backend module  
 
-st.set_page_config(page_title="Symbolic Topological Physical Systems", layout="wide")
-st.title("Symbolic Topological Physical Systems Framework")
-st.write("Compile your DSL, view the AST, extract physical coordinates, derive equations, and simulate dynamics.")
+st.set_page_config(page_title="Physics DSL Compiler", layout="wide")
+st.title("Physics DSL Compiler")
+st.write("Compile your DSL, view the AST, extract coordinates, derive equations, and simulate results.")
 
-dsl_input = st.text_area("Enter your DSL code here:", height=200)
+dsl_input = st.text_area("Enter your DSL code here:", height=200)  
 
 if st.button("Compile & Simulate"):
     # Step 1: Tokenization
-    st.write("📝 Tokenizing...")
     try:
+        st.write("📝 Tokenizing...")
         tokens = tokenize(dsl_input)
         st.write(f"Found {len(tokens)} tokens:")
         st.json([str(token) for token in tokens])
@@ -19,38 +19,35 @@ if st.button("Compile & Simulate"):
         st.stop()
 
     # Step 2: Parsing
-    st.write("🔍 Parsing the tokens...")
     try:
+        st.write("🔍 Parsing the tokens...")
         parser = MechanicsParser(tokens)
         ast = parser.parse()
         st.success("Parsing Successful!")
-        st.write("### AST Nodes")
+        st.write("### Generated AST Nodes (Full Attribute Dump):")
         for node in ast:
-            st.write(repr(node))
+            st.json({"type": type(node).__name__, **vars(node)})
     except Exception as e:
         st.error(f"Parsing error: {e}")
         st.stop()
 
-    # Step 3: Extract coordinates/physical quantities (robust)
+    # Step 3: Extract coordinates (robust logic)
     st.write("### Extracting Physical Coordinates")
     coordinates = []
     for node in ast:
-        # Support both legacy and new VarDef (with vector attribute)
-        if (
-            hasattr(node, "vartype")
-            and hasattr(node, "name")
-            and isinstance(node, VarDef)
-            and str(node.vartype).strip().lower() in ['angle', 'position', 'coordinate']
-        ):
-            coordinates.append(node.name)
-        # Optionally: add vector support or other types
-        elif hasattr(node, "vector") and getattr(node, "vector", False) and hasattr(node, "name"):
-            coordinates.append(node.name + " (vector)")
+        # Check if it's a VarDef
+        if isinstance(node, VarDef):
+            if (
+                hasattr(node, "vartype")
+                and str(node.vartype).strip().lower() in ['angle', 'position', 'coordinate']
+            ):
+                coordinates.append(node.name)
+            # Also consider vector coordinates
+            elif hasattr(node, "vector") and node.vector:
+                coordinates.append(node.name + " (vector)")
     if not coordinates:
-        st.error("No valid coordinates found in the DSL. Try checking your \\defvar definitions.")
-        st.info("AST node details:")
-        for node in ast:
-            st.json(vars(node))
+        st.error("No valid coordinates found in the DSL. See node details above for troubleshooting.")
+        st.info("If you believe this is a bug, check your VarDef nodes in the AST dump above.")
         st.stop()
     else:
         st.success("Coordinates extracted:")
