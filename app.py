@@ -1,71 +1,82 @@
-import streamlit as st  
-from complete_physics_dsl import *  # Import everything from your backend module  
+import streamlit as st
+from complete_physics_dsl import *
 
-# Initialize the Streamlit app  
-st.title("Physics DSL Compiler")  
-st.write("This application compiles your physics DSL code and simulates the results.")  
+st.set_page_config(page_title="Symbolic Topological Physical Systems", layout="wide")
+st.title("Symbolic Topological Physical Systems Framework")
+st.write("Compile your DSL, view the AST, extract physical coordinates, derive equations, and simulate dynamics.")
 
-# Text area for DSL input  
-dsl_input = st.text_area("Enter your DSL code here:", height=200)  
+dsl_input = st.text_area("Enter your DSL code here:", height=200)
 
-# Compile button  
-if st.button("Compile"):  
-    # Step 1: Tokenization  
-    st.write("📝 Tokenizing...")  
-    tokens = tokenize(dsl_input)  # Call your tokenization function  
-    st.write(f"Found {len(tokens)} tokens:")  
-    for token in tokens:  
-        st.write(token)  
+if st.button("Compile & Simulate"):
+    # Step 1: Tokenization
+    st.write("📝 Tokenizing...")
+    try:
+        tokens = tokenize(dsl_input)
+        st.write(f"Found {len(tokens)} tokens:")
+        st.json([str(token) for token in tokens])
+    except Exception as e:
+        st.error(f"Tokenization error: {e}")
+        st.stop()
 
-    # Step 2: Parsing  
-    st.write("🔍 Parsing the tokens...")  
-    try:  
-        # Create an instance of MechanicsParser  
-        parser = MechanicsParser(tokens)  
-        ast = parser.parse()  # Call the parse method on the instance  
-        st.success("Parsing Successful!")  
-
-        # Step 3: Displaying the AST  
-        st.write("### Generated AST Nodes:")  
-        for node in ast:  
-            st.write(type(node).__name__, vars(node))  # Show type and attributes for each node  
-
-        # Step 4: Extract Coordinates (robust matching and diagnostic)
-        coordinates = []
-        coordinate_types = ['angle', 'position', 'coordinate']
+    # Step 2: Parsing
+    st.write("🔍 Parsing the tokens...")
+    try:
+        parser = MechanicsParser(tokens)
+        ast = parser.parse()
+        st.success("Parsing Successful!")
+        st.write("### AST Nodes")
         for node in ast:
-            attrs = vars(node)
-            found = False
-            for key, value in attrs.items():
-                if str(value).strip().lower() in coordinate_types:
-                    coordinates.append(attrs.get('name', 'unknown'))
-                    found = True
-            # Optional: diagnostic info
-            if not found:
-                st.write(f"No coordinate type found in {type(node).__name__} node with attributes:", attrs)
+            st.write(repr(node))
+    except Exception as e:
+        st.error(f"Parsing error: {e}")
+        st.stop()
 
-        if not coordinates:
-            st.error("No valid coordinates found in the DSL.")
+    # Step 3: Extract coordinates/physical quantities (robust)
+    st.write("### Extracting Physical Coordinates")
+    coordinates = []
+    for node in ast:
+        # Support both legacy and new VarDef (with vector attribute)
+        if (
+            hasattr(node, "vartype")
+            and hasattr(node, "name")
+            and isinstance(node, VarDef)
+            and str(node.vartype).strip().lower() in ['angle', 'position', 'coordinate']
+        ):
+            coordinates.append(node.name)
+        # Optionally: add vector support or other types
+        elif hasattr(node, "vector") and getattr(node, "vector", False) and hasattr(node, "name"):
+            coordinates.append(node.name + " (vector)")
+    if not coordinates:
+        st.error("No valid coordinates found in the DSL. Try checking your \\defvar definitions.")
+        st.info("AST node details:")
+        for node in ast:
+            st.json(vars(node))
+        st.stop()
+    else:
+        st.success("Coordinates extracted:")
+        st.write(coordinates)
+
+    # Step 4: Derive equations
+    try:
+        st.write("⚡ Deriving Equations of Motion...")
+        symbolic_engine = SymbolicEngine()
+        equations = symbolic_engine.derive_equations_of_motion(ast, coordinates)
+        st.write("### Equations of Motion:")
+        st.write(equations)
+    except Exception as e:
+        st.error(f"Equation derivation error: {e}")
+        st.stop()
+
+    # Step 5: Run simulation
+    try:
+        st.write("🔧 Running Simulation...")
+        solution = run_simulation(equations)
+        if solution.get('success'):
+            st.write("### Simulation Results:")
+            st.line_chart(solution['y'])
+            st.write("Time:", solution['t'])
         else:
-            st.write("### Extracted Coordinates:")
-            st.write(coordinates)
-
-            # Step 5: Deriving Equations  
-            st.write("⚡ Deriving Equations of Motion...")  
-            symbolic_engine = SymbolicEngine()  # Instantiate SymbolicEngine  
-            equations = symbolic_engine.derive_equations_of_motion(ast, coordinates)  # Call the method  
-            st.write("### Equations of Motion:")  
-            st.write(equations)  
-
-            # Step 6: Running Simulation (if applicable)  
-            st.write("🔧 Running Simulation...")  
-            solution = run_simulation(equations)  # Assuming you have a function to run simulations  
-            if solution['success']:  
-                st.write("### Simulation Results:")  
-                st.line_chart(solution['y'])  # Plot simulation results  
-                st.write("Time:", solution['t'])  
-            else:  
-                st.error("Simulation failed!")  
-
-    except Exception as e:  
-        st.error(f"Error during parsing or simulation: {e}")  
+            st.error("Simulation failed!")
+            st.json(solution)
+    except Exception as e:
+        st.error(f"Simulation error: {e}")
