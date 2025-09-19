@@ -683,19 +683,16 @@ class MechanicsParser:
 
         def parse_primary(self) -> Expression:
    
-         # Time derivative tokens
         if self.match("DOT_NOTATION"):
-        # \dot{IDENT}
-           self.expect("LBRACE")
-           var = self.expect("IDENT").value
-           self.expect("RBRACE")
-           return DerivativeVarExpr(var, 1)
+            self.expect("LBRACE")
+            var = self.expect("IDENT").value
+            self.expect("RBRACE")
+            return DerivativeVarExpr(var, 1)
         if self.match("DDOT_NOTATION"):
-            # \ddot{IDENT}
-           self.expect("LBRACE")
-           var = self.expect("IDENT").value
-           self.expect("RBRACE")
-           return DerivativeVarExpr(var, 2)
+            self.expect("LBRACE")
+            var = self.expect("IDENT").value
+            self.expect("RBRACE")
+            return DerivativeVarExpr(var, 2)
         
         # Identifiers
         if self.match("IDENT"):
@@ -853,20 +850,21 @@ class SymbolicEngine:
         
         if isinstance(expr, NumberExpr):
             return sp.Float(expr.value)
+
+        elif isinstance(expr, DerivativeVarExpr):
+            # Map DerivativeVar(theta, 1) to theta_dot, DerivativeVar(theta, 2) to theta_ddot
+            if expr.order == 1:
+                return self.get_symbol(f"{expr.var}_dot")
+            elif expr.order == 2:
+                return self.get_symbol(f"{expr.var}_ddot")
+            else:
+                raise ValueError("Only first and second order derivatives are supported")
             
         elif isinstance(expr, IdentExpr):
             return self.get_symbol(expr.name)
             
         elif isinstance(expr, GreekLetterExpr):
             return self.get_symbol(expr.letter)
-            
-        elif isinstance(expr, DerivativeVarExpr):
-             if expr.order == 1:
-           return self.get_symbol(f"{expr.var}_dot")
-        elif expr.order == 2:
-            return self.get_symbol(f"{expr.var}_ddot")
-        else:
-            raise ValueError("Only first and second order derivatives are supported")
             
         elif isinstance(expr, BinaryOpExpr):
             left = self.ast_to_sympy(expr.left)
