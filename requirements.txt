@@ -9,3 +9,4 @@ numba
 scikit-learn
 streamlit-plotly-events
 streamlit-aggrid
+seaborn
