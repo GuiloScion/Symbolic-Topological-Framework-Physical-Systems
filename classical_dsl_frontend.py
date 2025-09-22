@@ -436,7 +436,7 @@ with col2:
 st.markdown("---")
 st.markdown("""
 <div style="text-align: center; color: #666; padding: 2rem;">
-    <h4>Physics DSL Compiler</h4>
+    <h4>Classical Mechanics DSL Compiler</h4>
     <p>Symbolic-Topological Framework for Physical Systems</p>
     <p><em>Built with Streamlit • Powered by SymPy • Created by Noah Parsons</em></p>
 </div>
