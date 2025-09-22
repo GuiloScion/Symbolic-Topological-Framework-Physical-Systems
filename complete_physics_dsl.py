@@ -967,22 +967,24 @@ class SymbolicEngine:
         for q in coordinates:
             q_sym = self.get_symbol(q)
             q_dot_sym = self.get_symbol(f"{q}_dot")
-            
-            # Substitute time derivatives
-            L_substituted = lagrangian.subs(sp.Derivative(q_sym, self.time_symbol), q_dot_sym)
-            
-            # ∂L/∂q̇
-            dL_dq_dot = sp.diff(L_substituted, q_dot_sym)
-            
-            # d/dt(∂L/∂q̇) - need to substitute back and differentiate
+            q_ddot_sym = self.get_symbol(f"{q}_ddot")
+
+            q_func = sp.Function(q)(self.time_symbol)
+
+            L_with_funcs = langrangian.subs(q_sym, q_func)
+            L_with_funcs = L_with_funcs.subs(q_dot_sym, sp.diff(q_func, self.time_symbol))
+
+            dL_dq_dot = sp.diff(L_with_funcs, sp.diff(q_func, self.time_symbol))
+
             d_dt_dL_dq_dot = sp.diff(dL_dq_dot, self.time_symbol)
-            
-            # ∂L/∂q  
-            dL_dq = sp.diff(L_substituted, q_sym)
-            
-            # Euler-Lagrange equation: d/dt(∂L/∂q̇) - ∂L/∂q = 0
+
+            dL_dq = sp.diff(L_with_funcs, q_func)
+
             equation = d_dt_dL_dq_dot - dL_dq
-            equations.append(equation)
+
+            equation = equation.subs(q_func, q_sym)
+            equation = equation.subs(sp.diff(q_func, self.time_symbol), q_dot_sym)
+            equation = equation.subs(sp.diff(q_func, self.time_symbol, 2), q_ddot_sym)
             
         return equations
 
