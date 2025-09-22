@@ -1069,18 +1069,25 @@ class NumericalSimulator:
         dydt = np.zeros_like(y)
         
         # First half: derivatives of positions are velocities
-        for i in range(0, len(y), 2):
-            dydt[i] = y[i + 1]  # q_dot
+        for i in range(len(self.coordinates)):
+            if 2*i + 1 < len(y): 
+                dydt[2*i] = y[2*i + 1]
             
         # Second half: derivatives of velocities are accelerations  
         for i, q in enumerate(self.coordinates):
             accel_key = f"{q}_ddot"
-            if accel_key in self.equations:
+            if accel_key in self.equations and 2*i + 1 < len(dydt):
                 try:
                     # Call compiled function with current state
-                    dydt[2*i + 1] = self.equations[accel_key](*y)
+                    accel_value - self.equations[accel_key](*y)
+                    if np.isfinite(accel_value):
+                        dydt[2*i + 1] = accel_value
+                    else: 
+                        print(f"Warning: Non-finite acceleration for {accel_key}")
+                        dydt[2*i + 1] = 0
                 except Exception as e:
                     print(f"Error evaluating {accel_key}: {e}")
+                    print(f"State vector length: {len(y)}, Expected symbols: {len(self.state_vars)}")
                     dydt[2*i + 1] = 0  # Default to zero acceleration
                     
         return dydt
@@ -1091,13 +1098,28 @@ class NumericalSimulator:
         # Set up initial conditions vector
         y0 = []
         for q in self.coordinates:
-            y0.append(self.initial_conditions.get(q, 0.0))
-            y0.append(self.initial_conditions.get(f"{q}_dot", 0.0))
-            
-        y0 = np.array(y0)
-        
+            # Position
+            pos_val = self.initial_conditions.get(q, 0.0)
+            y0.append(pos_val)
+            # Velocity
+            vel_key = f"{q}_dot"
+            vel_val = self.inital_conditions.get(vel_key, 0.0)
+            y0.append(vel_val)
+
+        y0 = np.array(y0, dtype=float)
+
+        print(f"Debug: Initial conditions vector: {y0}")
+        print(f"Debug: Coordinates: {self.coordinates}")
+        print(f"Debug: State variables: {self.state_vars}")
+
         # Time points
         t_eval = np.linspace(t_span[0], t_span[1], num_points)
+
+        try:
+            dydt_test = self.equations_of_motion(t_span[0], y0)
+            print(f"Debug: Initial derivatives: {dydt_test}")
+        except Exception as e:
+            return {'success': False, 'error': f'Initial evaluation failed: {str(e)}'}
         
         # Solve ODE
         try:
@@ -1106,9 +1128,10 @@ class NumericalSimulator:
                 t_span, 
                 y0,
                 t_eval=t_eval,
-                method='DOP853',  # High-accuracy method
-                rtol=1e-8,
-                atol=1e-10
+                method='RK45',  # High-accuracy method
+                rtol=1e-6,
+                atol=1e-8,
+                max_step=0.01
             )
             
             return {
@@ -1116,7 +1139,8 @@ class NumericalSimulator:
                 't': solution.t,
                 'y': solution.y,
                 'coordinates': self.coordinates,
-                'state_vars': self.state_vars
+                'state_vars': self.state_vars,
+                'message': solution.message if hasattr(solution, 'message') else ''
             }
             
         except Exception as e:
