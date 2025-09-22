@@ -971,7 +971,7 @@ class SymbolicEngine:
 
             q_func = sp.Function(q)(self.time_symbol)
 
-            L_with_funcs = langrangian.subs(q_sym, q_func)
+            L_with_funcs = lagrangian.subs(q_sym, q_func)
             L_with_funcs = L_with_funcs.subs(q_dot_sym, sp.diff(q_func, self.time_symbol))
 
             dL_dq_dot = sp.diff(L_with_funcs, sp.diff(q_func, self.time_symbol))
