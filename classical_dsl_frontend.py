@@ -7,7 +7,7 @@ from plotly.subplots import make_subplots
 import pandas as pd
 from complete_physics_dsl import *
 
-st.set_page_config(page_title="Advanced Physics DSL Compiler", layout="wide", page_icon="⚛️")
+st.set_page_config(page_title="Advanced Physics DSL Compiler", layout="wide")
 
 # Custom CSS for better styling
 st.markdown("""
@@ -41,7 +41,7 @@ st.markdown("""
 # Header
 st.markdown("""
 <div class="main-header">
-    <h1>⚛️ Advanced Physics DSL Compiler</h1>
+    <h1>Classcial Mechanics DSL Compiler</h1>
     <p>Symbolic-Topological Framework for Physical Systems</p>
     <p><em>Automatic derivation of equations of motion from Lagrangian mechanics</em></p>
 </div>
