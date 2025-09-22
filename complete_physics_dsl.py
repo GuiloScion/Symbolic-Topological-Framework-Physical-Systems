@@ -1477,7 +1477,7 @@ class PhysicsCompiler:
     def derive_equations(self) -> Dict[str, sp.Expr]:
         """Derive equations of motion from Lagrangian"""
         
-        if not self.lagrangian:
+        if not hasattr(self, 'lagrangian') or self.lagrangian is None:
             raise ValueError("No Lagrangian defined in system")
             
         # Convert Lagrangian to SymPy
