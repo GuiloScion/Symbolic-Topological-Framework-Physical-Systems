@@ -1,59 +1,46 @@
 import streamlit as st
 import numpy as np
-import matplotlib.pyplot as plt
+import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
-import pandas as pd
+import json
+import io
+import time
+from typing import Dict, Any
+
+# Import your backend compiler/simulator
 from complete_physics_dsl import *
 
-st.set_page_config(page_title="Advanced Physics DSL Compiler", layout="wide")
+# -----------------------------
+# App config & CSS (dark mode)
+# -----------------------------
+st.set_page_config(page_title="Physics DSL Studio", layout="wide", initial_sidebar_state="expanded")
 
-# Custom CSS for better styling
-st.markdown("""
-<style>
-.main-header {
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-    padding: 2rem;
-    border-radius: 10px;
-    color: white;
-    text-align: center;
-    margin-bottom: 2rem;
-}
-.system-card {
-    background: #f0f2f6;
-    padding: 1rem;
-    border-radius: 8px;
-    border-left: 5px solid #667eea;
-    margin: 1rem 0;
-}
-.equation-display {
-    background: #1e1e1e;
-    color: #00ff00;
-    padding: 1rem;
-    border-radius: 8px;
-    font-family: monospace;
-    overflow-x: auto;
-}
-</style>
-""", unsafe_allow_html=True)
+st.markdown(
+    """
+    <style>
+    /* App background */
+    .stApp, .main, header, .block-container { background-color: #0b0f1a; color: #e6eef6 }
+    /* Header */
+    .main-header { background: linear-gradient(90deg,#0f1724,#12203a); padding: 18px; border-radius:12px; }
+    .system-card { background:#0f1724; padding:12px; border-radius:8px; border-left:6px solid #5dd1ff; margin-bottom:12px }
+    .equation-display { background:#05060a; color:#7ef1c9; padding:12px; border-radius:8px; font-family: 'Fira Code', monospace; overflow-x:auto }
+    .small-muted { color:#9fb0c9; font-size:12px }
+    .accent-btn { background:linear-gradient(90deg,#5dd1ff,#7b6cff); color:#071124; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
-# Header
-st.markdown("""
-<div class="main-header">
-    <h1>Classcial Mechanics DSL Compiler</h1>
-    <p>Symbolic-Topological Framework for Physical Systems</p>
-    <p><em>Automatic derivation of equations of motion from Lagrangian mechanics</em></p>
-</div>
-""", unsafe_allow_html=True)
+# -----------------------------
+# Sidebar: examples + settings
+# -----------------------------
+st.sidebar.title("Physics DSL Studio")
 
-# Sidebar for examples and settings
-st.sidebar.title("🎛️ System Examples")
-
-example_systems = {
+EXAMPLES: Dict[str, Dict[str, Any]] = {
     "Simple Pendulum": {
-        "description": "Classic pendulum with gravitational restoring force",
-        "complexity": "Basic",
+        "desc": "Classic pendulum — good demonstration for single-DOF",
         "dsl": r"""
 \system{simple_pendulum}
 \defvar{theta}{Angle}{rad}
@@ -68,10 +55,8 @@ example_systems = {
 \animate{pendulum}
 """
     },
-    
     "Double Pendulum": {
-        "description": "Two coupled pendulums exhibiting chaotic behavior",
-        "complexity": "Advanced",
+        "desc": "Two-link chaotic pendulum — good for multi-DOF visuals",
         "dsl": r"""
 \system{double_pendulum}
 \defvar{theta1}{Angle}{rad}
@@ -91,10 +76,8 @@ example_systems = {
 \animate{double_pendulum}
 """
     },
-    
     "Harmonic Oscillator": {
-        "description": "Spring-mass system with Hooke's law",
-        "complexity": "Basic",
+        "desc": "Spring-mass linear oscillator",
         "dsl": r"""
 \system{harmonic_oscillator}
 \defvar{x}{Position}{m}
@@ -110,334 +93,279 @@ example_systems = {
     }
 }
 
-selected_example = st.sidebar.selectbox("Choose Example System:", list(example_systems.keys()))
+choice = st.sidebar.selectbox("Load example:", list(EXAMPLES.keys()))
+if st.sidebar.button("Load into editor"):
+    st.session_state.dsl = EXAMPLES[choice]["dsl"]
 
-if st.sidebar.button("Load Example"):
-    st.session_state.dsl_input = example_systems[selected_example]["dsl"]
-
-# Display example info
-if selected_example:
-    example = example_systems[selected_example]
-    st.sidebar.markdown(f"""
-    **Description:** {example['description']}
-    
-    **Complexity:** {example['complexity']}
-    """)
+st.sidebar.markdown("---")
 
 # Simulation parameters
-st.sidebar.title("🔧 Simulation Settings")
-t_max = st.sidebar.slider("Simulation Time (s)", 1, 20, 10)
-num_points = st.sidebar.slider("Number of Points", 100, 2000, 1000)
-show_debug = st.sidebar.checkbox("Show Debug Information", False)
+t_max = st.sidebar.slider("Simulation time (s)", min_value=1, max_value=60, value=10)
+num_points = st.sidebar.slider("Number of points", min_value=100, max_value=5000, value=1500, step=100)
+use_dark_theme_plots = st.sidebar.checkbox("Plotly dark theme", True)
+show_debug = st.sidebar.checkbox("Show debug panel", False)
 
-# Main interface
-col1, col2 = st.columns([1, 1])
+# Quick actions
+if st.sidebar.button("Clear editor"):
+    st.session_state.dsl = ""
 
-with col1:
-    st.header("📝 DSL Input")
-    
-    # Get DSL input
-    dsl_input = st.text_area(
-        "Enter your Physics DSL code:",
-        value=st.session_state.get('dsl_input', example_systems[selected_example]["dsl"]),
-        height=400,
-        help="Write your physics system using the DSL syntax. See examples in the sidebar."
-    )
-    
-    # Token analysis button
-    if st.button("🔍 Analyze Tokens"):
-        tokens = tokenize(dsl_input)
-        st.subheader("Token Analysis")
-        
-        token_df = pd.DataFrame([
-            {"Token": token.type, "Value": token.value, "Line": token.line, "Column": token.column}
-            for token in tokens
-        ])
-        st.dataframe(token_df)
-        
-        # Token type distribution
-        token_counts = token_df['Token'].value_counts()
-        fig = px.pie(values=token_counts.values, names=token_counts.index, 
-                    title="Token Type Distribution")
-        st.plotly_chart(fig, use_container_width=True)
+# -----------------------------
+# Main layout
+# -----------------------------
+header_col1, header_col2 = st.columns([3, 1])
+with header_col1:
+    st.markdown('<div class="main-header">', unsafe_allow_html=True)
+    st.title("Physics DSL Studio")
+    st.markdown("<div class='small-muted'>Write DSL, compile symbolic equations, run numerical sims, and visualize — all in one place.</div>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-with col2:
-    st.header("🚀 Compilation Results")
-    
-    if st.button("⚡ Compile & Simulate", type="primary"):
-        with st.spinner("🔄 Compiling Physics DSL..."):
-            compiler = PhysicsCompiler()
-            result = compiler.compile_dsl(dsl_input)
-        
-        if not result['success']:
-            st.error(f"❌ Compilation failed: {result['error']}")
-            st.stop()
-        
-        st.success("✅ Compilation successful!")
-        
-        # System information
-        st.markdown(f"""
-        <div class="system-card">
-            <h4>📊 System: {result['system_name']}</h4>
-            <p><strong>Coordinates:</strong> {', '.join(result['coordinates'])}</p>
-            <p><strong>Degrees of Freedom:</strong> {len(result['coordinates'])}</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Show equations of motion
-        st.subheader("⚡ Derived Equations of Motion")
-        st.markdown("*Automatically derived using Euler-Lagrange equations:*")
-        
-        for coord, equation in result['equations'].items():
-            st.markdown(f"""
-            <div class="equation-display">
-                <strong>{coord}:</strong><br>
-                {str(equation)}
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Debug information
-        if show_debug:
-            st.subheader("🔧 Debug Information")
-            with st.expander("AST Structure"):
-                for i, node in enumerate(compiler.ast):
-                    st.write(f"**Node {i}:** {type(node).__name__}")
-                    try:
-                        st.json(vars(node))
-                    except:
-                        st.write(repr(node))
-            
-            with st.expander("Variable Definitions"):
-                st.json(compiler.variables)
-            
-            with st.expander("Function Definitions"):
-                st.json({k: str(v) for k, v in compiler.definitions.items()})
-        
-        # Run simulation
-        st.subheader("📈 Numerical Simulation")
-        
-        with st.spinner("🔄 Running simulation..."):
-            solution = compiler.simulate((0, t_max), num_points)
-        
-        if not solution['success']:
-            st.error(f"❌ Simulation failed: {solution.get('error', 'Unknown error')}")
-            st.stop()
-        
-        st.success("✅ Simulation completed!")
-        
-        # Create comprehensive visualizations
-        st.subheader("📊 Results Visualization")
-        
-        # Time series plots
-        fig = make_subplots(
-            rows=2, cols=2,
-            subplot_titles=("Position vs Time", "Velocity vs Time", "Phase Space", "Energy Analysis"),
-            specs=[[{"secondary_y": True}, {"secondary_y": True}],
-                   [{"secondary_y": False}, {"secondary_y": False}]]
-        )
-        
-        # Plot trajectories
-        coords = result['coordinates']
-        t = solution['t']
-        y = solution['y']
-        
-        colors = ['red', 'blue', 'green', 'orange', 'purple']
-        
-        for i, coord in enumerate(coords):
-            # Position
-            fig.add_trace(
-                go.Scatter(x=t, y=y[2*i], name=f"{coord}(t)", 
-                          line=dict(color=colors[i % len(colors)])),
-                row=1, col=1
-            )
-            
-            # Velocity
-            fig.add_trace(
-                go.Scatter(x=t, y=y[2*i+1], name=f"{coord}_dot(t)", 
-                          line=dict(color=colors[i % len(colors)], dash='dash')),
-                row=1, col=2
-            )
-        
-        # Phase space (first coordinate)
-        if len(coords) > 0:
-            fig.add_trace(
-                go.Scatter(x=y[0], y=y[1], mode='lines+markers',
-                          name="Phase Space", line=dict(color='purple')),
-                row=2, col=1
-            )
-        
-        # Energy calculation (simplified for demo)
-        if result['system_name'] == 'simple_pendulum':
-            # Calculate energies for pendulum
-            theta = y[0]
-            theta_dot = y[1]
-            
-            # Assume default parameters
-            m, l, g = 1.0, 1.0, 9.81
-            
-            KE = 0.5 * m * l**2 * theta_dot**2
-            PE = m * g * l * (1 - np.cos(theta))
-            E_total = KE + PE
-            
-            fig.add_trace(
-                go.Scatter(x=t, y=KE, name="Kinetic Energy", 
-                          line=dict(color='red')),
-                row=2, col=2
-            )
-            fig.add_trace(
-                go.Scatter(x=t, y=PE, name="Potential Energy", 
-                          line=dict(color='blue')),
-                row=2, col=2
-            )
-            fig.add_trace(
-                go.Scatter(x=t, y=E_total, name="Total Energy", 
-                          line=dict(color='green', width=3)),
-                row=2, col=2
-            )
-        
-        fig.update_layout(height=800, showlegend=True, 
-                         title_text="Complete System Analysis")
-        
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # 3D animation for pendulum systems
-        if 'pendulum' in result['system_name']:
-            st.subheader("🎬 3D Animation")
-            
-            # Create animation frames
-            frames = []
-            for i in range(0, len(t), max(1, len(t)//50)):  # 50 frames max
-                frame_data = []
-                
-                if result['system_name'] == 'simple_pendulum':
-                    theta = y[0][i]
-                    l = 1.0  # Default length
-                    x = l * np.sin(theta)
-                    y_pos = -l * np.cos(theta)
-                    
-                    # Pendulum rod and bob
-                    frame_data.append(
-                        go.Scatter3d(
-                            x=[0, x], y=[0, y_pos], z=[0, 0],
-                            mode='lines+markers',
-                            line=dict(color='black', width=8),
-                            marker=dict(size=[0, 15], color=['black', 'red'])
-                        )
-                    )
-                
-                elif result['system_name'] == 'double_pendulum':
-                    theta1, theta2 = y[0][i], y[2][i]
-                    l1, l2 = 1.0, 1.0  # Default lengths
-                    
-                    x1 = l1 * np.sin(theta1)
-                    y1 = -l1 * np.cos(theta1)
-                    x2 = x1 + l2 * np.sin(theta2)
-                    y2 = y1 - l2 * np.cos(theta2)
-                    
-                    # Double pendulum
-                    frame_data.append(
-                        go.Scatter3d(
-                            x=[0, x1, x2], y=[0, y1, y2], z=[0, 0, 0],
-                            mode='lines+markers',
-                            line=dict(color='black', width=8),
-                            marker=dict(size=[0, 12, 12], color=['black', 'red', 'blue'])
-                        )
-                    )
-                
-                frames.append(go.Frame(data=frame_data, name=str(i)))
-            
-            # Create figure with frames
-            anim_fig = go.Figure(
-                data=frames[0].data if frames else [],
-                frames=frames
-            )
-            
-            # Add play/pause buttons
-            anim_fig.update_layout(
-                updatemenus=[{
-                    "buttons": [
-                        {"args": [None, {"frame": {"duration": 50, "redraw": True},
-                                        "fromcurrent": True}],
-                         "label": "Play", "method": "animate"},
-                        {"args": [[None], {"frame": {"duration": 0, "redraw": True},
-                                          "mode": "immediate", "transition": {"duration": 0}}],
-                         "label": "Pause", "method": "animate"}
-                    ],
-                    "direction": "left", "pad": {"r": 10, "t": 87},
-                    "showactive": False, "type": "buttons", "x": 0.1, "xanchor": "right", "y": 0, "yanchor": "top"
-                }],
-                scene=dict(
-                    xaxis=dict(range=[-3, 3]),
-                    yaxis=dict(range=[-3, 1]),
-                    zaxis=dict(range=[-0.1, 0.1]),
-                    aspectmode='cube'
-                ),
-                title="3D Pendulum Animation"
-            )
-            
-            st.plotly_chart(anim_fig, use_container_width=True)
-        
-        # Export options
-        st.subheader("📥 Export Results")
-        
-        col_export1, col_export2, col_export3 = st.columns(3)
-        
-        with col_export1:
-            # Export trajectory data
-            trajectory_df = pd.DataFrame({
-                'time': t,
-                **{f"{coord}": y[2*i] for i, coord in enumerate(coords)},
-                **{f"{coord}_dot": y[2*i+1] for i, coord in enumerate(coords)}
-            })
-            
-            csv = trajectory_df.to_csv(index=False)
-            st.download_button(
-                label="📊 Download Trajectory CSV",
-                data=csv,
-                file_name=f"{result['system_name']}_trajectory.csv",
-                mime="text/csv"
-            )
-        
-        with col_export2:
-            # Export equations as LaTeX
-            equations_latex = "\\begin{align}\n"
-            for coord, eq in result['equations'].items():
-                equations_latex += f"\\ddot{{{coord}}} &= {str(eq)} \\\\\n"
-            equations_latex += "\\end{align}"
-            
-            st.download_button(
-                label="📝 Download Equations (LaTeX)",
-                data=equations_latex,
-                file_name=f"{result['system_name']}_equations.tex",
-                mime="text/plain"
-            )
-        
-        with col_export3:
-            # Export system parameters
-            system_json = {
-                "system_name": result['system_name'],
-                "coordinates": result['coordinates'],
-                "variables": compiler.variables,
-                "initial_conditions": compiler.initial_conditions,
-                "simulation_time": t_max,
-                "num_points": num_points
-            }
-            
-            import json
-            system_json_str = json.dumps(system_json, indent=2, default=str)
-            st.download_button(
-                label="⚙️ Download System Config",
-                data=system_json_str,
-                file_name=f"{result['system_name']}_config.json",
-                mime="application/json"
-            )
+with header_col2:
+    st.markdown("\n")
+    if st.button("Example: Run Loaded"):
+        st.experimental_rerun()
 
-# Footer
-st.markdown("---")
-st.markdown("""
-<div style="text-align: center; color: #666; padding: 2rem;">
-    <h4>Classical Mechanics DSL Compiler</h4>
-    <p>Symbolic-Topological Framework for Physical Systems</p>
-    <p><em>Built with Streamlit • Powered by SymPy • Created by Noah Parsons</em></p>
-</div>
-""", unsafe_allow_html=True)
+# Two columns: editor & results
+editor_col, result_col = st.columns([1, 1.4])
+
+with editor_col:
+    st.subheader("DSL Editor")
+    dsl_text = st.text_area("Enter your physics DSL:", value=st.session_state.get('dsl', EXAMPLES[choice]['dsl']), height=420, key='dsl_editor')
+
+    st.markdown("---")
+    st.markdown("**Token analysis / quick debug**")
+    if st.button("Analyze tokens"):
+        try:
+            tokens = tokenize(dsl_text)
+            token_df = pd.DataFrame([{'type': t.type, 'value': t.value, 'line': t.line, 'col': t.column} for t in tokens])
+            st.dataframe(token_df)
+            st.success(f"Found {len(tokens)} tokens")
+        except Exception as e:
+            st.error(f"Tokenization failed: {e}")
+
+    st.markdown("---")
+    st.markdown("**Compile & simulate**")
+    run_now = st.button("Compile & Simulate")
+
+with result_col:
+    st.subheader("Results & Visualization")
+
+    # Placeholder boxes
+    system_info_box = st.container()
+    equations_box = st.container()
+    viz_box = st.container()
+    controls_box = st.container()
+
+# -----------------------------
+# Main actions: Compile & Simulate
+# -----------------------------
+if run_now:
+    compiler = PhysicsCompiler()
+    status = system_info_box
+    with status:
+        st.info("Compiling DSL and deriving equations — this may take a few seconds...")
+
+    try:
+        compile_result = compiler.compile_dsl(dsl_text)
+    except Exception as e:
+        st.error(f"Compilation pipeline raised an exception: {e}")
+        compile_result = {'success': False, 'error': str(e)}
+
+    if not compile_result.get('success'):
+        st.error(f"Compilation failed: {compile_result.get('error', 'Unknown error')}")
+    else:
+        # Extract results
+        system_name = compile_result.get('system_name', 'unnamed')
+        coordinates = compile_result.get('coordinates', [])
+        equations = compile_result.get('equations', {})
+
+        # Show system card
+        with system_info_box:
+            st.markdown(f"<div class='system-card'><h4> {system_name}</h4><div class='small-muted'>Coordinates: {', '.join(coordinates) if coordinates else '—'}</div></div>", unsafe_allow_html=True)
+
+        # Show equations
+        with equations_box:
+            st.subheader("Equations of Motion")
+            if equations:
+                for q, eq in equations.items():
+                    st.markdown(f"<div class='equation-display'><strong>{q}</strong><br> {str(eq)}</div>", unsafe_allow_html=True)
+            else:
+                st.warning("No equations derived — check your Lagrangian and coordinate definitions.")
+
+        # Setup simulator
+        simulator = compile_result.get('simulator')
+        # Ensure simulator has initial conditions & parameters
+        try:
+            # Basic parameters (user editable)
+            st.sidebar.markdown('---')
+            st.sidebar.subheader('Simulation Parameters (override)')
+
+            # Provide defaults and let user input JSON for parameters
+            default_params = getattr(simulator, 'parameters', {}) or {}
+            params_str = st.sidebar.text_area('Parameters (JSON)', value=json.dumps(default_params, indent=2), height=120)
+            try:
+                params = json.loads(params_str) if params_str.strip() else {}
+            except Exception as e:
+                st.sidebar.error(f'Invalid JSON: {e}')
+                params = default_params
+
+            simulator.set_parameters(params)
+
+            # Initial conditions
+            default_ic = getattr(simulator, 'initial_conditions', {}) or {}
+            ic_str = st.sidebar.text_area('Initial conditions (JSON)', value=json.dumps(default_ic, indent=2), height=120)
+            try:
+                ic = json.loads(ic_str) if ic_str.strip() else {}
+            except Exception as e:
+                st.sidebar.error(f'Invalid JSON: {e}')
+                ic = default_ic
+
+            simulator.set_initial_conditions(ic)
+
+            # Compile symbolic accelerations to numerical functions
+            # The compiler should have produced 'equations' as a dict of sympy expressions
+            symbolic_engine = compiler.symbolic
+            accel_map = symbolic_engine.solve_for_accelerations(list(equations.values()), [c.replace('_dot','') for c in coordinates]) if equations else {}
+            # If the backend already compiled inside compiler, try to use that
+            if accel_map:
+                simulator.compile_equations(accel_map, [c.replace('_dot','') for c in coordinates])
+            else:
+                # Fallback: try to ask compiler for its simulator (already compiled)
+                try:
+                    simulator = compile_result.get('simulator', simulator)
+                except:
+                    pass
+
+        except Exception as e:
+            st.error(f"Simulator setup failed: {e}")
+
+        # Run numerical simulation
+        with viz_box:
+            st.subheader("Numerical Simulation")
+            placeholder = st.empty()
+            with st.spinner('Running numerical integration...'):
+                try:
+                    sim_result = simulator.simulate((0, t_max), num_points)
+                except Exception as e:
+                    st.error(f"Simulation crashed: {e}")
+                    sim_result = {'success': False, 'error': str(e)}
+
+            if not sim_result.get('success'):
+                st.error(f"Simulation failed: {sim_result.get('error', 'Unknown')}")
+            else:
+                t = sim_result['t']
+                y = sim_result['y']
+                coords = sim_result.get('coordinates', simulator.coordinates if hasattr(simulator, 'coordinates') else [])
+
+                st.success('Simulation finished')
+
+                # Interactive time slider + play/pause
+                controls = controls_box
+                with controls:
+                    st.markdown('**Playback Controls**')
+                    play = st.button('▶ Play')
+                    pause = st.button('⏸ Pause')
+                    time_idx = st.slider('Frame', 0, len(t)-1, 0, format='%d')
+
+                # Build figure(s)
+                fig = make_subplots(rows=2, cols=2, subplot_titles=("Position","Velocity","Phase Space","Energy"), specs=[[{}, {}],[{}, {}]])
+
+                colors = px.colors.qualitative.Vivid
+
+                # Positions and velocities
+                for i, coord in enumerate(coords):
+                    pos = y[2*i]
+                    vel = y[2*i + 1]
+                    fig.add_trace(go.Scatter(x=t, y=pos, name=f"{coord}(t)", mode='lines', legendgroup=f'g{i}'), row=1, col=1)
+                    fig.add_trace(go.Scatter(x=t, y=vel, name=f"{coord}_dot(t)", mode='lines', line=dict(dash='dash'), legendgroup=f'g{i}'), row=1, col=2)
+
+                # Phase space for first coordinate
+                if len(coords) > 0:
+                    fig.add_trace(go.Scatter(x=y[0], y=y[1], mode='lines', name='Phase'), row=2, col=1)
+
+                # Energy (best-effort from backend visualizer)
+                try:
+                    energy_fig = compiler.visualizer.plot_energy(sim_result, simulator.parameters if hasattr(simulator, 'parameters') else {}, system_name)
+                except Exception:
+                    energy_fig = None
+
+                if use_dark_theme_plots:
+                    fig.update_layout(template='plotly_dark', paper_bgcolor='#0b0f1a', plot_bgcolor='#071025')
+                else:
+                    fig.update_layout(template='plotly', paper_bgcolor='#ffffff')
+
+                fig.update_layout(height=700, showlegend=True, title_text=f"Analysis: {system_name}")
+
+                st.plotly_chart(fig, use_container_width=True)
+
+                # Frame-specific 2D visualization for selected frame
+                with st.expander('Frame preview & 3D (if available)'):
+                    frame_idx = time_idx
+                    col_a, col_b = st.columns([1,1])
+                    with col_a:
+                        st.markdown(f"**Frame {frame_idx} (t={t[frame_idx]:.3f}s)**")
+                        table = {f'{coord}': list(y[2*i][frame_idx:frame_idx+1])[0] for i, coord in enumerate(coords)}
+                        st.json(table)
+                    with col_b:
+                        # Simple 2D pendulum drawing for pendulum-like systems
+                        if 'pendulum' in system_name:
+                            # assume first coordinate is angle
+                            theta = float(y[0][frame_idx])
+                            l = float(simulator.parameters.get('l', 1.0))
+                            x = l * np.sin(theta)
+                            y_pos = -l * np.cos(theta)
+
+                            fig2 = go.Figure()
+                            fig2.add_trace(go.Scatter(x=[0, x], y=[0, y_pos], mode='lines+markers', line=dict(width=6)))
+                            fig2.update_layout(height=350, template='plotly_dark', xaxis=dict(range=[-l*1.5, l*1.5]), yaxis=dict(range=[-l*1.5, l*0.5]))
+                            st.plotly_chart(fig2, use_container_width=True)
+                        else:
+                            st.info('3D preview not available for this system type yet')
+
+                # Exporters
+                st.markdown('---')
+                st.subheader('Export')
+                # Trajectory CSV
+                traj_df = pd.DataFrame({'time': t})
+                for i, coord in enumerate(coords):
+                    traj_df[coord] = y[2*i]
+                    traj_df[f'{coord}_dot'] = y[2*i + 1]
+
+                csv = traj_df.to_csv(index=False).encode('utf-8')
+                st.download_button('Download Trajectories CSV', csv, file_name=f'{system_name}_trajectories.csv', mime='text/csv')
+
+                # Equations LaTeX
+                latex = '\\begin{align}\n'
+                for q, eq in equations.items():
+                    latex += f"\\ddot{{{q}}} &= {str(eq)} \\\\n"
+                latex += '\\end{align}'
+                st.download_button('Download Equations (LaTeX)', latex, file_name=f'{system_name}_equations.tex')
+
+                # System JSON
+                sys_json = json.dumps({'system_name': system_name, 'coordinates': coords, 'parameters': simulator.parameters, 'initial_conditions': simulator.initial_conditions, 't_max': t_max, 'num_points': num_points}, indent=2, default=str)
+                st.download_button('Download System JSON', sys_json, file_name=f'{system_name}_config.json')
+
+                # Debug panel
+                if show_debug:
+                    with st.expander('🔧 Debug Info'):
+                        st.subheader('Compiler AST')
+                        try:
+                            st.json([repr(n) for n in compiler.ast])
+                        except Exception as e:
+                            st.write(f'AST unavailable: {e}')
+
+                        st.subheader('Symbol map')
+                        try:
+                            st.json({k: str(v) for k, v in compiler.symbolic.symbol_map.items()})
+                        except Exception:
+                            pass
+
+                        st.subheader('Simulator internals')
+                        try:
+                            st.write(f"State vars: {getattr(simulator, 'state_vars', [])}")
+                            st.write(f"Equations compiled: {list(getattr(simulator, 'equations', {}).keys())}")
+                        except Exception:
+                            pass
+
+# Small helpful footer
+st.markdown('---')
+st.markdown("<div class='small-muted'>Built for rapid prototyping — reach out if you want custom visualization widgets, camera-follow animations, or export to MP4/GIF.</div>", unsafe_allow_html=True)
