@@ -270,10 +270,16 @@ with result_col:
                     plt.close(fig)
                     return buf
 
+                if "mp4_buf" not in st.session_state:
+                    st.session_state.mp4_buf = None
+                
                 if st.button("Generate MP4"):
                     with st.spinner("Rendering animation..."):
-                        buf = make_anim()
-                        st.download_button("Download MP4", buf.getvalue(), file_name=f"{system_name}.mp4", mime="video/mp4")
+                        st.session_state.mp4_buf = make_anim()
+
+                if st.session_state.mp4_buf:
+                    st.download_button("Download MP4", st.session_state.mp4_buf.getvalue(),
+                                       file_name=(f"{system_name}.mp4", mine="video/mp4")
 
 st.markdown('---')
 st.markdown("<div class='small-muted'>Now you can export CSV, LaTeX, JSON, and MP4 animations directly. MP4 export adapts to pendulums, oscillators, and general systems with auto-scaling.</div>", unsafe_allow_html=True)
