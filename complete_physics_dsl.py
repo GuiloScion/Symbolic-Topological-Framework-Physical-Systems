@@ -1041,6 +1041,8 @@ class NumericalSimulator:
         state_vars = []
         for q in coordinates:
             state_vars.extend([q, f"{q}_dot"])
+
+        print(f"Debug: State variables: {state_vars}")
             
         # Create parameter substitutions
         param_subs = {self.symbolic.get_symbol(k): v for k, v in self.parameters.items()}
@@ -1053,14 +1055,60 @@ class NumericalSimulator:
             if accel_key in accelerations:
                 # Substitute parameters
                 eq = accelerations[accel_key].subs(param_subs)
-                
-                # Convert to numerical function
-                state_symbols = [self.symbolic.get_symbol(var) for var in state_vars]
-                compiled_equations[accel_key] = sp.lambdify(state_symbols, eq, 'numpy')
-                
+
+                print(f"Debug: Original equation for {accel_key}: {accelerations[accel_key]}")
+                print(f"Debug: After parameter substitution: {eq}")
+
+                free_symbols = eq.free_symbols
+
+                ordered_symbols = []
+                symbol_indices = []
+
+                for i, var_name in enumerate(state_vars):
+                    sym = self.symbolic.get_symbol(var_name)
+                    if sym in free_symbols:
+                        ordered_symbols.append(sym)
+                        symbol_indices.append(i)
+
+                print(f"Debug: Free symbols for {accel_key}: {[str(s) for s in ordered_symbols]}")
+                print(f"Debug: Symbol indices: {symbol_indices}")
+
+                if ordered_symbols: 
+                    try: 
+                        func = sp.lambdify(ordered_symbols, eq, 'numpy')
+
+                        def make_wrapper(func, indices):
+                            def wrapper(*state_vector):
+                                try:
+                                    args = [state.vector[i] for i in indices if i < len(state_vector)]
+                                    if len(args) == len(indices):
+                                        result = func(*args)
+                                        return float(result) if np.isfinite(result) else 0.0
+                                    else:
+                                        return 0.0
+                                except: 
+                                    return 0.0
+                            return wrapper
+
+                        compiled_equations[accel_key] = make_wrapper(func, symbol_indices)
+                        print(f"Debug: Successfully compiled {accel_key}")
+
+                    except Exception as e:
+                        print(f"Warning: Could not compile {accel_key}: {e}")
+                        compiled_equations[accel_key] = lambda *args: 0.0
+                else:
+                    try:
+                        const_value = float(eq.evalf())
+                        compiled_equations[accel_key] = lambda *args: const_value
+                        print(f"Debug: {accel_key} is constant: {const_value}")
+                    except:
+                        compiled_equations[accel_key] = lambda *args: 0.0
+
         self.equations = compiled_equations
         self.state_vars = state_vars
         self.coordinates = coordinates
+
+        print(f"Debug: Successfully compiled {len(compiled_equations)} equations")
 
     def equations_of_motion(self, t: float, y: np.ndarray) -> np.ndarray:
         """ODE system for numerical integration"""
