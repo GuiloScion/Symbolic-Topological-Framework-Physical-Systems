@@ -16,7 +16,7 @@ import time
 # ============
 
 TOKEN_TYPES = [
-    # Physics specific -- PUT THESE FIRST!
+    # Physics specific
     ("SYSTEM", r"\\system"),
     ("DEFVAR", r"\\defvar"),
     ("DEFINE", r"\\define"),
@@ -48,9 +48,9 @@ TOKEN_TYPES = [
     ("OINT", r"\\oint"),
     ("SUM", r"\\sum"),
     ("LIMIT", r"\\lim"),
-    # Greek letters (put before COMMAND so they don't get gobbled!)
+    # Greek letters
     ("GREEK_LETTER", r"\\alpha|\\beta|\\gamma|\\delta|\\epsilon|\\zeta|\\eta|\\theta|\\iota|\\kappa|\\lambda|\\mu|\\nu|\\xi|\\omicron|\\pi|\\rho|\\sigma|\\tau|\\upsilon|\\phi|\\chi|\\psi|\\omega"),
-    # General commands -- MUST BE AFTER ALL SPECIFIC TOKENS!
+    # General commands
     ("COMMAND", r"\\[a-zA-Z_][a-zA-Z0-9_]*"),
     # Brackets and grouping
     ("LBRACE", r"\{"),
