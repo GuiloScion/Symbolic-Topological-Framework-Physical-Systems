@@ -985,6 +985,8 @@ class SymbolicEngine:
             equation = equation.subs(q_func, q_sym)
             equation = equation.subs(sp.diff(q_func, self.time_symbol), q_dot_sym)
             equation = equation.subs(sp.diff(q_func, self.time_symbol, 2), q_ddot_sym)
+
+            equations.append(equation)
             
         return equations
 
@@ -1080,7 +1082,7 @@ class NumericalSimulator:
                         def make_wrapper(func, indices):
                             def wrapper(*state_vector):
                                 try:
-                                    args = [state.vector[i] for i in indices if i < len(state_vector)]
+                                    args = [state_vector[i] for i in indices if i < len(state_vector)]
                                     if len(args) == len(indices):
                                         result = func(*args)
                                         return float(result) if np.isfinite(result) else 0.0
@@ -1127,7 +1129,7 @@ class NumericalSimulator:
             if accel_key in self.equations and 2*i + 1 < len(dydt):
                 try:
                     # Call compiled function with current state
-                    accel_value - self.equations[accel_key](*y)
+                    accel_value = self.equations[accel_key](*y)
                     if np.isfinite(accel_value):
                         dydt[2*i + 1] = accel_value
                     else: 
@@ -1151,7 +1153,7 @@ class NumericalSimulator:
             y0.append(pos_val)
             # Velocity
             vel_key = f"{q}_dot"
-            vel_val = self.inital_conditions.get(vel_key, 0.0)
+            vel_val = self.initial_conditions.get(vel_key, 0.0)
             y0.append(vel_val)
 
         y0 = np.array(y0, dtype=float)
