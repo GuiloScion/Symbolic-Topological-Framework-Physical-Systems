@@ -1461,33 +1461,22 @@ class PhysicsCompiler:
     def compile_dsl(self, dsl_source: str) -> dict:
         """Complete compilation pipeline"""
         
-        print("🚀 Starting Physics Compilation...")
-        
         try:
             # Tokenization
-            print("📝 Tokenizing...")
             tokens = tokenize(dsl_source)
-            print(f"   Found {len(tokens)} tokens")
             
             # Parsing  
-            print("🔍 Parsing AST...")
             parser = MechanicsParser(tokens)
             self.ast = parser.parse()
-            print(f"   Generated {len(self.ast)} AST nodes")
             
             # Semantic analysis
-            print("🧠 Analyzing semantics...")
             self.analyze_semantics()
             
             # Generate equations
-            print("⚡ Deriving equations of motion...")
             equations = self.derive_equations()
             
             # Prepare simulation
-            print("🔧 Setting up simulation...")
             self.setup_simulation(equations)
-            
-            print("✅ Compilation successful!")
             
             return {
                 'success': True,
@@ -1498,7 +1487,6 @@ class PhysicsCompiler:
             }
             
         except Exception as e:
-            print(f"❌ Compilation failed: {e}")
             return {
                 'success': False,
                 'error': str(e)
