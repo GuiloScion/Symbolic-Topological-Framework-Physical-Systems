@@ -116,7 +116,7 @@ num_points = st.sidebar.slider("Number of points", 100, 5000, 1500, step=100)
 # -----------------------------
 st.markdown('<div class="main-header">', unsafe_allow_html=True)
 st.title("Physics DSL Studio")
-st.markdown("<div class='small-muted'>Write DSL, compile symbolic equations, run numerical sims, and visualize — all in one place.</div>", unsafe_allow_html=True)
+st.markdown("<div class='small-muted'>Write DSL, compile symbolic equations, run numerical simulations, and visualize — all in one place.</div>", unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
 # Two columns: editor & results
