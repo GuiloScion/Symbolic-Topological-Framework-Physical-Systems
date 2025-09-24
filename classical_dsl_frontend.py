@@ -214,4 +214,4 @@ with result_col:
                 st.download_button('Download System JSON', sys_json, file_name=f'{system_name}_config.json')
                 
 st.markdown('---')
-st.markdown("<div class='small-muted'>Now you can export CSV, LaTeX, JSON, and MP4 animations directly. MP4 export adapts to pendulums, oscillators, and general systems with auto-scaling.</div>", unsafe_allow_html=True)
+st.markdown("<div class='small-muted'>MP4 export adapts to pendulums, oscillators, and general systems with auto-scaling.</div>", unsafe_allow_html=True)
