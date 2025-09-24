@@ -33,7 +33,7 @@ st.markdown(
 # -----------------------------
 # Sidebar: examples + settings
 # -----------------------------
-st.sidebar.title("🎛️ Physics DSL Studio")
+st.sidebar.title("Physics DSL Studio")
 
 EXAMPLES: Dict[str, Dict[str, Any]] = {
     "Simple Pendulum": {
@@ -123,14 +123,14 @@ st.markdown('</div>', unsafe_allow_html=True)
 editor_col, result_col = st.columns([1, 1.4])
 
 with editor_col:
-    st.subheader("📝 DSL Editor")
+    st.subheader("DSL Editor")
     dsl_text = st.text_area("Enter your physics DSL:", value=st.session_state.get('dsl', EXAMPLES[choice]['dsl']), height=420, key='dsl_editor')
 
     st.markdown("---")
-    run_now = st.button("🚀 Compile & Simulate")
+    run_now = st.button("Compile & Simulate")
 
 with result_col:
-    st.subheader("🚀 Results & Visualization")
+    st.subheader("Results & Visualization")
 
     if run_now:
         compiler = PhysicsCompiler()
@@ -148,9 +148,9 @@ with result_col:
             equations = compile_result.get('equations', {})
             simulator = compile_result.get('simulator')
 
-            st.markdown(f"<div class='system-card'><h4>🧩 {system_name}</h4><div class='small-muted'>Coordinates: {', '.join(coordinates) if coordinates else '—'}</div></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='system-card'><h4> {system_name}</h4><div class='small-muted'>Coordinates: {', '.join(coordinates) if coordinates else '—'}</div></div>", unsafe_allow_html=True)
 
-            st.subheader("📜 Equations of Motion")
+            st.subheader("Equations of Motion")
             if equations:
                 for q, eq in equations.items():
                     st.markdown(f"<div class='equation-display'><strong>{q}</strong><br> {str(eq)}</div>", unsafe_allow_html=True)
@@ -169,7 +169,7 @@ with result_col:
                 y = sim_result['y']
                 coords = sim_result.get('coordinates', simulator.coordinates if hasattr(simulator, 'coordinates') else [])
 
-                st.success('Simulation finished ✅')
+                st.success('Simulation finished')
 
                 # Static plots
                 fig = make_subplots(rows=2, cols=2, subplot_titles=("Position","Velocity","Phase Space","Energy"))
@@ -184,7 +184,7 @@ with result_col:
                 # -----------------------------
                 # Export options
                 # -----------------------------
-                st.subheader("📤 Export")
+                st.subheader("Export")
 
                 # CSV Export
                 traj_df = pd.DataFrame({'time': t})
