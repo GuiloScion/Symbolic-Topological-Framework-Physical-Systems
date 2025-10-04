@@ -132,7 +132,7 @@ with editor_col:
 
 
 with result_col:
-    st.subheader("Results & Visualization")
+    st.subheader("Results & Visualization")
 
     if run_now:
         compiler = PhysicsCompiler()
