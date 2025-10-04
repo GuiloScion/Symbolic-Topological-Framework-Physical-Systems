@@ -11,6 +11,7 @@ from typing import Dict, Any
 
 # Import your backend compiler/simulator
 from complete_physics_dsl import *
+from matlab_export_generator import *
 
 # -----------------------------
 # App config & CSS (dark mode)
