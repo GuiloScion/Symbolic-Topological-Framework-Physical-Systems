@@ -213,6 +213,24 @@ with result_col:
                     'num_points': num_points
                 }, indent=2, default=str)
                 st.download_button('Download System JSON', sys_json, file_name=f'{system_name}_config.json')
+
+                if st.button('Generate MATLAB Validation Script'):
+                    try:
+                        matlab_file = compiler.export_to_matlab(equations)
+
+                        with open(matlab_file, 'r') as f:
+                            matlab_content = f.read()
+
+                        st.download_button(
+                            'Download MATLAB Script (.m)',
+                            matlab_content,
+                            file_name=matlab_file, 
+                            mime='text/plain'
+                        )
+                        st.success(f'Generated {matlab_file}')
+                        st.info('Run in MATLAB to validate results')
+                    except Exception as e:
+                        st.error(f'MATLAB export failed: {e}')
                 
 st.markdown('---')
 st.markdown("<div class='small-muted'>MP4 export adapts to pendulums, oscillators, and general systems with auto-scaling.</div>", unsafe_allow_html=True)
