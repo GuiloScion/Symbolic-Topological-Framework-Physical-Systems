@@ -495,7 +495,7 @@ class MATLABExporter:
 def add_matlab_export(PhysicsCompiler):
     """Add MATLAB export capability to PhysicsCompiler"""
     
-    def export_to_matlab(self, equations: Dict[str, sp.Expr] = None, filename: str = None):
+    def export_to_matlab(self, equations=None, filename=None):
         """Export system to MATLAB validation script"""
         if equations is None:
             equations = self.derive_equations()
@@ -504,51 +504,3 @@ def add_matlab_export(PhysicsCompiler):
         return exporter.export_validation_script(equations, filename)
     
     PhysicsCompiler.export_to_matlab = export_to_matlab
-
-
-# Usage example
-if __name__ == "__main__":
-    # Import your existing PhysicsCompiler
-    from complete_physics_dsl import PhysicsCompiler
-    
-    # Add MATLAB export capability
-    add_matlab_export(PhysicsCompiler)
-    
-    # Double pendulum DSL
-    DOUBLE_PENDULUM_DSL = """
-\\system{double_pendulum}
-
-\\defvar{theta1}{Angle}{rad}
-\\defvar{theta2}{Angle}{rad}
-\\defvar{m1}{Mass}{kg}
-\\defvar{m2}{Mass}{kg}
-\\defvar{l1}{Length}{m}
-\\defvar{l2}{Length}{m}
-\\defvar{g}{Acceleration}{m/s^2}
-
-\\lagrangian{0.5*(m1+m2)*l1^2*\\dot{theta1}^2 + 0.5*m2*l2^2*\\dot{theta2}^2 + m2*l1*l2*\\dot{theta1}*\\dot{theta2}*\\cos{theta1-theta2} - (m1+m2)*g*l1*\\cos{theta1} - m2*g*l2*\\cos{theta2}}
-
-\\initial{theta1=1.5708, theta2=1.5708, theta1_dot=0, theta2_dot=0}
-\\solve{euler_lagrange}
-"""
-    
-    # Compile DSL
-    compiler = PhysicsCompiler()
-    result = compiler.compile_dsl(DOUBLE_PENDULUM_DSL)
-    
-    if result['success']:
-        print("✓ DSL compiled successfully")
-        
-        # Export to MATLAB
-        matlab_file = compiler.export_to_matlab(result['equations'])
-        
-        print(f"\n{'='*60}")
-        print("NEXT STEPS:")
-        print(f"{'='*60}")
-        print(f"1. Open MATLAB")
-        print(f"2. Navigate to this directory")
-        print(f"3. Run: >> {matlab_file[:-2]}")
-        print(f"4. Compare the CSV output with your hand calculations")
-        print(f"{'='*60}")
-    else:
-        print(f"✗ Compilation failed: {result.get('error', 'Unknown error')}")
