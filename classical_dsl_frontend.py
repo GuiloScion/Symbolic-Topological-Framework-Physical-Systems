@@ -148,7 +148,6 @@ with result_col:
             st.session_state.compile_result = compile_result
             st.session_state.compiler = compiler
 
-    # Check if we have results in session state
     if 'compile_result' in st.session_state and st.session_state.compile_result.get('success'):
         compile_result = st.session_state.compile_result
         compiler = st.session_state.compiler
