@@ -135,8 +135,8 @@ with result_col:
     st.subheader("Results & Visualization")
     
     if run_now:
-        compiler = PhysicsCompiler()
-        try:
+        compiler = PhysicsCompiler()
+        try:
             compile_result = compiler.compile_dsl(dsl_text)
         except Exception as e:
             st.error(f"Compilation pipeline raised an exception: {e}")
