@@ -130,107 +130,120 @@ with editor_col:
     st.markdown("---")
     run_now = st.button("Compile & Simulate")
 
+
 with result_col:
-    st.subheader("Results & Visualization")
+    st.subheader("Results & Visualization")
 
-    if run_now:
-        compiler = PhysicsCompiler()
-        try:
-            compile_result = compiler.compile_dsl(dsl_text)
-        except Exception as e:
-            st.error(f"Compilation pipeline raised an exception: {e}")
-            compile_result = {'success': False, 'error': str(e)}
+    if run_now:
+        compiler = PhysicsCompiler()
+        try:
+            compile_result = compiler.compile_dsl(dsl_text)
+        except Exception as e:
+            st.error(f"Compilation pipeline raised an exception: {e}")
+            compile_result = {'success': False, 'error': str(e)}
 
-        if not compile_result.get('success'):
-            st.error(f"Compilation failed: {compile_result.get('error', 'Unknown error')}")
-        else:
-            system_name = compile_result.get('system_name', 'unnamed')
-            coordinates = compile_result.get('coordinates', [])
-            equations = compile_result.get('equations', {})
-            simulator = compile_result.get('simulator')
+        if not compile_result.get('success'):
+            st.error(f"Compilation failed: {compile_result.get('error', 'Unknown error')}")
+        else:
+            # Store in session state
+            st.session_state.compile_result = compile_result
+            st.session_state.compiler = compiler
 
-            st.markdown(f"<div class='system-card'><h4> {system_name}</h4><div class='small-muted'>Coordinates: {', '.join(coordinates) if coordinates else '—'}</div></div>", unsafe_allow_html=True)
+    # Check if we have results in session state
+    if 'compile_result' in st.session_state and st.session_state.compile_result.get('success'):
+        compile_result = st.session_state.compile_result
+        compiler = st.session_state.compiler
+       
+        system_name = compile_result.get('system_name', 'unnamed')
+        coordinates = compile_result.get('coordinates', [])
+        equations = compile_result.get('equations', {})
+        simulator = compile_result.get('simulator')
 
-            st.subheader("Equations of Motion")
-            if equations:
-                for q, eq in equations.items():
-                    st.markdown(f"<div class='equation-display'><strong>{q}</strong><br> {str(eq)}</div>", unsafe_allow_html=True)
-            else:
-                st.warning("No equations derived — check your Lagrangian and coordinate definitions.")
+        st.markdown(f"<div class='system-card'><h4>{system_name}</h4><div class='small-muted'>Coordinates: {', '.join(coordinates) if coordinates else '—'}</div></div>", unsafe_allow_html=True)
 
-            # Run numerical simulation
-            try:
-                sim_result = simulator.simulate((0, t_max), num_points)
-            except Exception as e:
-                st.error(f"Simulation crashed: {e}")
-                sim_result = {'success': False, 'error': str(e)}
+        st.subheader("Equations of Motion")
+        if equations:
+            for q, eq in equations.items():
+                st.markdown(f"<div class='equation-display'><strong>{q}</strong><br>{str(eq)}</div>", unsafe_allow_html=True)
+        else:
+            st.warning("No equations derived — check your Lagrangian and coordinate definitions.")
 
-            if sim_result.get('success'):
-                t = sim_result['t']
-                y = sim_result['y']
-                coords = sim_result.get('coordinates', simulator.coordinates if hasattr(simulator, 'coordinates') else [])
+        # Run numerical simulation (only once)
+        if 'sim_result' not in st.session_state or run_now:
+            try:
+                sim_result = simulator.simulate((0, t_max), num_points)
+                st.session_state.sim_result = sim_result
+            except Exception as e:
+                st.error(f"Simulation crashed: {e}")
+                st.session_state.sim_result = {'success': False, 'error': str(e)}
 
-                st.success('Simulation finished')
+        sim_result = st.session_state.sim_result
 
-                # Static plots
-                fig = make_subplots(rows=2, cols=2, subplot_titles=("Position","Velocity","Phase Space","Energy"))
-                for i, coord in enumerate(coords):
-                    fig.add_trace(go.Scatter(x=t, y=y[2*i], name=f"{coord}(t)"), row=1, col=1)
-                    fig.add_trace(go.Scatter(x=t, y=y[2*i+1], name=f"{coord}_dot(t)", line=dict(dash='dash')), row=1, col=2)
-                if len(coords) > 0:
-                    fig.add_trace(go.Scatter(x=y[0], y=y[1], name="Phase"), row=2, col=1)
-                fig.update_layout(template='plotly_dark', height=700)
-                st.plotly_chart(fig, use_container_width=True)
+        if sim_result.get('success'):
+            t = sim_result['t']
+            y = sim_result['y']
+            coords = sim_result.get('coordinates', simulator.coordinates if hasattr(simulator, 'coordinates') else [])
 
-                # -----------------------------
-                # Export options
-                # -----------------------------
-                st.subheader("Export")
+            st.success('Simulation finished')
 
-                # CSV Export
-                traj_df = pd.DataFrame({'time': t})
-                for i, coord in enumerate(coords):
-                    traj_df[coord] = y[2*i]
-                    traj_df[f"{coord}_dot"] = y[2*i+1]
+            # Static plots
+            fig = make_subplots(rows=2, cols=2, subplot_titles=("Position","Velocity","Phase Space","Energy"))
+            for i, coord in enumerate(coords):
+                fig.add_trace(go.Scatter(x=t, y=y[2*i], name=f"{coord}(t)"), row=1, col=1)
+                fig.add_trace(go.Scatter(x=t, y=y[2*i+1], name=f"{coord}_dot(t)", line=dict(dash='dash')), row=1, col=2)
+            if len(coords) > 0:
+                fig.add_trace(go.Scatter(x=y[0], y=y[1], name="Phase"), row=2, col=1)
+            fig.update_layout(template='plotly_dark', height=700)
+            st.plotly_chart(fig, use_container_width=True)
 
-                csv = traj_df.to_csv(index=False).encode('utf-8')
-                st.download_button('Download Trajectories CSV', csv, file_name=f'{system_name}_trajectories.csv', mime='text/csv')
+            # Export options
+            st.subheader("Export")
 
-                # LaTeX Export
-                latex = '\\\\begin{align}\\n'
-                for q, eq in equations.items():
-                    latex += f"\\\\ddot{{{q}}} &= {str(eq)} \\\\\\n"
-                latex += '\\\\end{align}'
-                st.download_button('Download Equations (LaTeX)', latex, file_name=f'{system_name}_equations.tex')
+            # CSV Export
+            traj_df = pd.DataFrame({'time': t})
+            for i, coord in enumerate(coords):
+                traj_df[coord] = y[2*i]
+                traj_df[f"{coord}_dot"] = y[2*i+1]
 
-                # JSON Export
-                sys_json = json.dumps({
-                    'system_name': system_name,
-                    'coordinates': coords,
-                    'parameters': simulator.parameters,
-                    'initial_conditions': simulator.initial_conditions,
-                    't_max': t_max,
-                    'num_points': num_points
-                }, indent=2, default=str)
-                st.download_button('Download System JSON', sys_json, file_name=f'{system_name}_config.json')
+            csv = traj_df.to_csv(index=False).encode('utf-8')
+            st.download_button('Download Trajectories CSV', csv, file_name=f'{system_name}_trajectories.csv', mime='text/csv')
 
-                if st.button('Generate MATLAB Validation Script'):
-                    try:
-                        matlab_file = compiler.export_to_matlab(equations)
+            # LaTeX Export
+            latex = '\\\\begin{align}\\n'
+            for q, eq in equations.items():
+                latex += f"\\\\ddot{{{q}}} &= {str(eq)} \\\\\\n"
+            latex += '\\\\end{align}'
+            st.download_button('Download Equations (LaTeX)', latex, file_name=f'{system_name}_equations.tex')
 
-                        with open(matlab_file, 'r') as f:
-                            matlab_content = f.read()
-
-                        st.download_button(
-                            'Download MATLAB Script (.m)',
-                            matlab_content,
-                            file_name=matlab_file, 
-                            mime='text/plain'
-                        )
-                        st.success(f'Generated {matlab_file}')
-                        st.info('Run in MATLAB to validate results')
-                    except Exception as e:
-                        st.error(f'MATLAB export failed: {e}')
-                
-st.markdown('---')
-st.markdown("<div class='small-muted'>MP4 export adapts to pendulums, oscillators, and general systems with auto-scaling.</div>", unsafe_allow_html=True)
+            # JSON Export
+            sys_json = json.dumps({
+                'system_name': system_name,
+                'coordinates': coords,
+                'parameters': simulator.parameters,
+                'initial_conditions': simulator.initial_conditions,
+                't_max': t_max,
+                'num_points': num_points
+            }, indent=2, default=str)
+            st.download_button('Download System JSON', sys_json, file_name=f'{system_name}_config.json')
+           
+            # MATLAB Export
+            st.markdown("---")
+            if st.button('🔬 Generate MATLAB Validation Script'):
+                try:
+                    matlab_file = compiler.export_to_matlab(equations)
+                    with open(matlab_file, 'r') as f:
+                        matlab_code = f.read()
+                    st.session_state.matlab_code = matlab_code
+                    st.session_state.matlab_filename = matlab_file
+                except Exception as e:
+                    st.error(f'MATLAB export failed: {e}')
+           
+            # Show download button if MATLAB code was generated
+            if 'matlab_code' in st.session_state:
+                st.download_button(
+                    '📥 Download MATLAB Script',
+                    st.session_state.matlab_code,
+                    file_name=st.session_state.matlab_filename,
+                    mime='text/plain'
+                )
+                st.success(f'✓ Generated: {st.session_state.matlab_filename}')
