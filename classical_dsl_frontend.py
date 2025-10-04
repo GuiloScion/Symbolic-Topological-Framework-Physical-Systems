@@ -145,7 +145,6 @@ with result_col:
         if not compile_result.get('success'):
             st.error(f"Compilation failed: {compile_result.get('error', 'Unknown error')}")
         else:
-            # Store in session state
             st.session_state.compile_result = compile_result
             st.session_state.compiler = compiler
 
