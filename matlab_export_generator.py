@@ -249,6 +249,22 @@ class MATLABExporter:
         PE2 = -m2 * g * (l1 * cos(theta1) + l2 * cos(theta2));
         PE = PE1 + PE2;
 """
+        elif system == "harmonic_oscillator":
+            code += """        % Kinetic energy
+        KE = 0.5 * m .* x_dot.^2;
+        
+        % Potential energy
+        PE = 0.5 * k .* x.^2;
+"""
+        elif system == "damped_oscillator":
+            code += """        % Kinetic energy
+        KE = 0.5 * m .* x_dot.^2;
+        
+        % Potential energy
+        PE = 0.5 * k .* x.^2;
+        
+        % Note: Damped system - energy will decrease over time
+"""
         else:
             # Generic energy calculation
             code += """        % Generic energy calculation
@@ -269,11 +285,6 @@ class MATLABExporter:
         """Generate utility functions for data logging and plotting"""
         
         coordinates = self.compiler.get_coordinates()
-        
-        # Build variable names for headers
-        var_names = []
-        for coord in coordinates:
-            var_names.extend([f"{coord}(rad)", f"{coord}_dot(rad/s)"])
         
         code = f"""    %% Nested function: Save Data Log
     function save_data_log(t, """
@@ -345,8 +356,6 @@ class MATLABExporter:
         for coord in coordinates:
             code += f"{coord}, {coord}_dot, "
         code += "KE, PE, E_total)\n"
-        
-        num_plots = 2 + len(coordinates) * 2  # angles, velocities, energies, phase spaces
         
         code += f"""        figure('Position', [100, 100, 1200, 800]);
         
@@ -489,18 +498,3 @@ class MATLABExporter:
         
         code += "    end\n\n"
         return code
-
-
-# Add method to PhysicsCompiler class
-def add_matlab_export(PhysicsCompiler):
-    """Add MATLAB export capability to PhysicsCompiler"""
-    
-    def export_to_matlab(self, equations=None, filename=None):
-        """Export system to MATLAB validation script"""
-        if equations is None:
-            equations = self.derive_equations()
-        
-        exporter = MATLABExporter(self)
-        return exporter.export_validation_script(equations, filename)
-    
-    PhysicsCompiler.export_to_matlab = export_to_matlab
