@@ -1602,27 +1602,3 @@ class PhysicsCompiler:
     def plot_phase_space(self, solution: dict, coordinate_index: int = 0):
         """Plot phase space"""
         self.visualizer.plot_phase_space(solution, coordinate_index)
-
-# ===========================
-# EXAMPLE SYSTEMS
-# ===========================
-
-# Simple Pendulum
-SIMPLE_PENDULUM_DSL = """
-\\system{simple_pendulum}
-
-\\defvar{theta}{Angle}{rad}
-\\defvar{m}{Mass}{kg}
-\\defvar{l}{Length}{m}
-\\defvar{g}{Acceleration}{m/s^2}
-
-\\define{\\op{kinetic}(m, l, theta_dot) = 0.5 * m * l^2 * theta_dot^2}
-\\define{\\op{potential}(m, g, l, theta) = m * g * l * (1 - \\cos{theta})}
-
-\\lagrangian{kinetic(m, l, \\dot{theta}) - potential(m, g, l, theta)}
-
-\\initial{theta=0.5, theta_dot=0}
-
-\\solve{euler_lagrange}
-\\animate{pendulum}
-"""
