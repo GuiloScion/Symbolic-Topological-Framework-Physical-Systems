@@ -133,8 +133,8 @@ with editor_col:
 
 with result_col:
     st.subheader("Results & Visualization")
-
-    if run_now:
+    
+    if run_now:
         compiler = PhysicsCompiler()
         try:
             compile_result = compiler.compile_dsl(dsl_text)
