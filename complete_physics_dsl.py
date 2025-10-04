@@ -8,7 +8,6 @@ from scipy.integrate import solve_ivp
 from typing import List, Dict, Optional, Tuple, Any, Union
 from dataclasses import dataclass
 from enum import Enum
-from matlab_export_generator import *
 import json
 import time
 
