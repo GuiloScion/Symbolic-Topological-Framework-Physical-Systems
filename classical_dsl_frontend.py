@@ -137,27 +137,27 @@ with result_col:
     if run_now:
         compiler = PhysicsCompiler()
         try:
-            compile_result = compiler.compile_dsl(dsl_text)
-        except Exception as e:
-            st.error(f"Compilation pipeline raised an exception: {e}")
-            compile_result = {'success': False, 'error': str(e)}
-
-        if not compile_result.get('success'):
-            st.error(f"Compilation failed: {compile_result.get('error', 'Unknown error')}")
-        else:
+            compile_result = compiler.compile_dsl(dsl_text)
+        except Exception as e:
+            st.error(f"Compilation pipeline raised an exception: {e}")
+            compile_result = {'success': False, 'error': str(e)}
+            
+        if not compile_result.get('success'):
+            st.error(f"Compilation failed: {compile_result.get('error', 'Unknown error')}")
+        else:
             # Store in session state
-            st.session_state.compile_result = compile_result
-            st.session_state.compiler = compiler
+            st.session_state.compile_result = compile_result
+            st.session_state.compiler = compiler
 
     # Check if we have results in session state
-    if 'compile_result' in st.session_state and st.session_state.compile_result.get('success'):
-        compile_result = st.session_state.compile_result
-        compiler = st.session_state.compiler
-       
-        system_name = compile_result.get('system_name', 'unnamed')
-        coordinates = compile_result.get('coordinates', [])
-        equations = compile_result.get('equations', {})
-        simulator = compile_result.get('simulator')
+    if 'compile_result' in st.session_state and st.session_state.compile_result.get('success'):
+        compile_result = st.session_state.compile_result
+        compiler = st.session_state.compiler
+        
+        system_name = compile_result.get('system_name', 'unnamed')
+        coordinates = compile_result.get('coordinates', [])
+        equations = compile_result.get('equations', {})
+        simulator = compile_result.get('simulator')
 
         st.markdown(f"<div class='system-card'><h4>{system_name}</h4><div class='small-muted'>Coordinates: {', '.join(coordinates) if coordinates else '—'}</div></div>", unsafe_allow_html=True)
 
