@@ -95,7 +95,7 @@ class Token:
         return f"{self.type}:{self.value}@{self.line}:{self.column}"
 
 def tokenize(source: str) -> List[Token]:
-    """Enhanced tokenizer with position tracking"""
+    """Tokenizer with position tracking"""
     tokens = []
     line = 1
     line_start = 0
@@ -121,9 +121,9 @@ def tokenize(source: str) -> List[Token]:
             
     return tokens
 
-# ===========================
+# =====================
 # COMPLETE AST SYSTEM
-# ===========================
+# =====================
 
 class ASTNode:
     """Base class for all AST nodes"""
@@ -287,9 +287,9 @@ class AnimateDef(ASTNode):
     def __repr__(self):
         return f"Animate({self.target}, {self.options})"
 
-# ===========================
-# ENHANCED PHYSICS UNITS
-# ===========================
+# =============
+# PHYSICS UNITS
+# ==============
 
 class Unit:
     def __init__(self, dimensions: Dict[str, int], scale: float = 1.0):
@@ -1602,3 +1602,4 @@ class PhysicsCompiler:
     def plot_phase_space(self, solution: dict, coordinate_index: int = 0):
         """Plot phase space"""
         self.visualizer.plot_phase_space(solution, coordinate_index)
+# ==============================
