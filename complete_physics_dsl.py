@@ -459,7 +459,18 @@ class MechanicsParser:
         name = self.expect("IDENT").value
         self.expect("RBRACE")
         self.expect("LBRACE")
-        vartype = self.expect("IDENT").value
+        # Allow multi-word vartype (e.g., 'Spring Constant') by collecting tokens until RBRACE
+        vartype_parts = []
+        while True:
+            tok = self.peek()
+            if not tok:
+                raise SyntaxError("Unexpected end while parsing vartype")
+            if tok.type == 'RBRACE':
+                break
+            # Consume the token and append its textual value
+            self.pos += 1
+            vartype_parts.append(tok.value)
+        vartype = ' '.join(vartype_parts).strip()
         self.expect("RBRACE")
         self.expect("LBRACE")
         
@@ -960,6 +971,27 @@ class SymbolicEngine:
         else:
             raise ValueError(f"Cannot convert {type(expr)} to SymPy")
 
+    def make_numeric_evaluator(self, expr: sp.Expr, ordered_symbols: list):
+        """Create a numeric evaluator that substitutes numeric values into expr and evaluates using SymPy.
+
+        ordered_symbols: list of sympy.Symbol in the order the function will expect values.
+        Returns a callable f(*values) -> float
+        """
+        # Prepare a lambda that will substitute symbol: value mapping and evaluate
+        def evaluator(*values):
+            try:
+                subs = {sym: val for sym, val in zip(ordered_symbols, values)}
+                val = expr.subs(subs)
+                # Evaluate numerically
+                val_num = float(sp.N(val))
+                if np.isfinite(val_num):
+                    return val_num
+                return 0.0
+            except Exception:
+                return 0.0
+
+        return evaluator
+
     def derive_equations_of_motion(self, lagrangian: sp.Expr, coordinates: List[str]) -> List[sp.Expr]:
         """Derive Euler-Lagrange equations from Lagrangian"""
         equations = []
@@ -1075,6 +1107,37 @@ class NumericalSimulator:
                 print(f"Debug: Free symbols for {accel_key}: {[str(s) for s in ordered_symbols]}")
                 print(f"Debug: Symbol indices: {symbol_indices}")
 
+                # Try to simplify and replace time-derivative objects (Derivative) with symbolic names
+                try:
+                    eq = sp.simplify(eq)
+                    eq = sp.expand(eq)
+                except Exception:
+                    pass
+
+                # Replace Derivative(symbol, (t,n)) or Derivative(symbol, t) with q_dot / q_ddot symbols
+                try:
+                    ders = list(eq.atoms(sp.Derivative))
+                    for d in ders:
+                        try:
+                            # Base symbol being differentiated
+                            base = d.args[0]
+                            # Determine order
+                            order = 1
+                            if len(d.args) >= 2:
+                                arg2 = d.args[1]
+                                if isinstance(arg2, tuple) and len(arg2) >= 2:
+                                    order = int(arg2[1])
+                                else:
+                                    order = 1
+                            base_name = str(base)
+                            if base_name in coordinates:
+                                repl = self.symbolic.get_symbol(f"{base_name}_dot" if order == 1 else f"{base_name}_ddot")
+                                eq = eq.xreplace({d: repl})
+                        except Exception:
+                            continue
+                except Exception:
+                    pass
+
                 if ordered_symbols: 
                     try: 
                         func = sp.lambdify(ordered_symbols, eq, 'numpy')
@@ -1097,7 +1160,27 @@ class NumericalSimulator:
 
                     except Exception as e:
                         print(f"Warning: Could not compile {accel_key}: {e}")
-                        compiled_equations[accel_key] = lambda *args: 0.0
+                        # Fallback: create numeric evaluator that substitutes numeric values into the sympy expression
+                        try:
+                            ordered_syms = [self.symbolic.get_symbol(var_name) for var_name in state_vars if self.symbolic.get_symbol(var_name) in eq.free_symbols]
+                            numeric_eval = self.symbolic.make_numeric_evaluator(eq, ordered_syms)
+
+                            def wrapper_numeric(*state_vector):
+                                try:
+                                    args = []
+                                    for i, var_name in enumerate(state_vars):
+                                        sym = self.symbolic.get_symbol(var_name)
+                                        if sym in eq.free_symbols:
+                                            args.append(state_vector[i])
+                                    return float(numeric_eval(*args))
+                                except Exception:
+                                    return 0.0
+
+                            compiled_equations[accel_key] = wrapper_numeric
+                            print(f"Debug: Using numeric evaluator fallback for {accel_key}")
+                        except Exception as e2:
+                            print(f"Fallback numeric evaluator failed for {accel_key}: {e2}")
+                            compiled_equations[accel_key] = lambda *args: 0.0
                 else:
                     try:
                         const_value = float(eq.evalf())
@@ -1207,6 +1290,53 @@ class MechanicsVisualizer:
         self.ax = None
         self.animation = None
 
+    # --- ffmpeg / writer helpers ---
+    def has_ffmpeg(self) -> bool:
+        """Return True if ffmpeg is available on PATH (required for mp4 output)."""
+        import shutil
+        return shutil.which('ffmpeg') is not None
+
+    def save_animation_to_file(self, anim: animation.FuncAnimation, filename: str, fps: int = 30) -> bool:
+        """Save a Matplotlib FuncAnimation to file.
+
+        Tries MP4 (ffmpeg) first, then falls back to GIF (imagemagick or pillow). Returns True on success.
+        """
+        if anim is None:
+            return False
+
+        try:
+            # Choose writer
+            if filename.lower().endswith('.mp4') and self.has_ffmpeg():
+                Writer = animation.writers['ffmpeg']
+                writer = Writer(fps=fps, metadata=dict(artist='PhysicsDSL'))
+                anim.save(filename, writer=writer)
+                return True
+            # Fallback to gif via pillow
+            if filename.lower().endswith('.gif'):
+                try:
+                    anim.save(filename, writer='pillow', fps=fps)
+                    return True
+                except Exception:
+                    pass
+
+            # If requested mp4 but no ffmpeg, try saving as gif and then convert if possible
+            if filename.lower().endswith('.mp4'):
+                tmp_gif = filename + '.gif'
+                try:
+                    anim.save(tmp_gif, writer='pillow', fps=fps)
+                    # Try to convert gif -> mp4 if ffmpeg available
+                    import subprocess
+                    if self.has_ffmpeg():
+                        subprocess.run(['ffmpeg', '-y', '-i', tmp_gif, filename], check=True)
+                        return True
+                except Exception:
+                    pass
+
+        except Exception as e:
+            print(f"save_animation_to_file failed: {e}")
+
+        return False
+
     def setup_3d_plot(self, title: str = "Classical Mechanics Simulation"):
         """Setup 3D plotting environment"""
         self.fig = plt.figure(figsize=(12, 8))
@@ -1228,10 +1358,17 @@ class MechanicsVisualizer:
         t = solution['t']
         y = solution['y']
         coordinates = solution['coordinates']
-        
-        # Extract trajectory data based on system type
-        if system_name == "pendulum":
+
+        # Normalize system name for matching
+        name = (system_name or '').lower()
+
+        # Determine pendulum type based on name or number of coordinates
+        if 'double' in name or len(coordinates) >= 2:
             theta = y[0]  # First coordinate
+            # If we have two coordinates treat as double pendulum
+            if y.shape[0] >= 4:
+                # Re-route to double pendulum behaviour below
+                pass
             l = parameters.get('l', 1.0)
             
             # Convert to Cartesian coordinates
@@ -1263,10 +1400,10 @@ class MechanicsVisualizer:
                         
                 return line, trail
                 
-        elif system_name == "double_pendulum":
+        elif 'double' in name or (y.shape[0] >= 4):
             theta1 = y[0]
             theta2 = y[2]
-            l1 = parameters.get('l1', 1.0)
+            l1 = parameters.get('l1', parameters.get('l', 1.0))
             l2 = parameters.get('l2', 1.0)
             
             # Positions
@@ -1311,8 +1448,42 @@ class MechanicsVisualizer:
                 return line1, line2, trail1, trail2
                 
         else:
-            print(f"Animation for {system_name} not implemented yet")
-            return None
+            # Fallback: if only one coordinate present treat as single pendulum
+            if y.shape[0] >= 2:
+                theta = y[0]
+                l = parameters.get('l', 1.0)
+
+                x = l * np.sin(theta)
+                y_pos = -l * np.cos(theta)
+                z = np.zeros_like(x)
+
+                # Set axis limits
+                self.ax.set_xlim(-l*1.2, l*1.2)
+                self.ax.set_ylim(-l*1.2, l*0.2)
+                self.ax.set_zlim(-0.1, 0.1)
+
+                # Initialize plot elements
+                line, = self.ax.plot([], [], [], 'o-', linewidth=3, markersize=8, color='red')
+                trail, = self.ax.plot([], [], [], '-', alpha=0.3, color='blue')
+
+                def animate_frame(frame):
+                    if frame < len(t):
+                        # Pendulum rod and bob
+                        line.set_data([0, x[frame]], [0, y_pos[frame]])
+                        line.set_3d_properties([0, z[frame]])
+
+                        # Trail of bob
+                        trail_length = min(frame, 100)  # Show last 100 points
+                        if trail_length > 0:
+                            trail.set_data(x[frame-trail_length:frame+1], 
+                                         y_pos[frame-trail_length:frame+1])
+                            trail.set_3d_properties(z[frame-trail_length:frame+1])
+
+                    return line, trail
+
+            else:
+                print(f"Animation for {system_name} not implemented yet")
+                return None
             
         # Create animation
         interval = max(1, int(1000 * (t[-1] - t[0]) / len(t)))  # Match real time roughly
@@ -1322,6 +1493,98 @@ class MechanicsVisualizer:
         )
         
         return self.animation
+
+    def animate(self, solution: dict, parameters: dict, system_name: str = "system"):
+        """Generic dispatcher for animations.
+
+        Decides which specific animation to run based on system_name and available coordinates.
+        Returns a Matplotlib FuncAnimation or None.
+        """
+        if not solution or not solution.get('success'):
+            return None
+
+        coords = solution.get('coordinates', [])
+
+        # Normalize name for matching
+        name = (system_name or '').lower()
+
+        try:
+            # Pendulum-like systems
+            if 'pendulum' in name or any('theta' in c for c in coords):
+                # Reuse existing pendulum animator, which supports single & double
+                return self.animate_pendulum(solution, parameters, system_name)
+
+            # Oscillator-like systems (single coordinate x)
+            if 'oscillator' in name or (len(coords) == 1):
+                # Create a simple time-series animation: position and velocity with moving marker
+                t = solution['t']
+                y = solution['y']
+
+                fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6))
+                ax1.set_title(f"{system_name} — Position")
+                ax2.set_title(f"{system_name} — Velocity")
+
+                pos = y[0]
+                vel = y[1] if y.shape[0] > 1 else np.zeros_like(pos)
+
+                line1, = ax1.plot(t, pos, 'b-', alpha=0.6)
+                marker1, = ax1.plot([t[0]], [pos[0]], 'ro')
+
+                line2, = ax2.plot(t, vel, 'g-', alpha=0.6)
+                marker2, = ax2.plot([t[0]], [vel[0]], 'ro')
+
+                ax1.set_xlabel('Time (s)')
+                ax2.set_xlabel('Time (s)')
+
+                def update(frame):
+                    if frame < len(t):
+                        marker1.set_data([t[frame]], [pos[frame]])
+                        marker2.set_data([t[frame]], [vel[frame]])
+                    return marker1, marker2
+
+                anim = animation.FuncAnimation(fig, update, frames=len(t), interval=max(1, int(1000*(t[-1]-t[0])/len(t))), blit=False)
+                self.fig = fig
+                self.ax = ax1
+                self.animation = anim
+                return anim
+
+            # Multi-coordinate fallback: animate first two coordinates as phase-space
+            if len(coords) >= 2:
+                t = solution['t']
+                y = solution['y']
+                x = y[0]
+                vx = y[1]
+
+                fig, ax = plt.subplots(figsize=(6,6))
+                ax.set_title(f'{system_name} — Phase Space')
+                line, = ax.plot([], [], 'b-')
+                point, = ax.plot([], [], 'ro')
+
+                ax.set_xlabel(coords[0])
+                ax.set_ylabel(f"{coords[0]}_dot")
+
+                def init():
+                    ax.set_xlim(np.min(x), np.max(x))
+                    ax.set_ylim(np.min(vx), np.max(vx))
+                    line.set_data([], [])
+                    point.set_data([], [])
+                    return line, point
+
+                def update(frame):
+                    line.set_data(x[:frame], vx[:frame])
+                    point.set_data([x[frame-1]], [vx[frame-1]])
+                    return line, point
+
+                anim = animation.FuncAnimation(fig, update, frames=len(t), init_func=init, interval=max(1, int(1000*(t[-1]-t[0])/len(t))), blit=False)
+                self.fig = fig
+                self.ax = ax
+                self.animation = anim
+                return anim
+
+        except Exception as e:
+            print(f"Visualizer animate failed: {e}")
+            return None
+
 
     def plot_energy(self, solution: dict, parameters: dict, system_name: str):
         """Plot energy conservation"""
@@ -1592,7 +1855,23 @@ class PhysicsCompiler:
     def animate(self, solution: dict):
         """Create animation"""
         parameters = self.simulator.parameters
-        return self.visualizer.animate_pendulum(solution, parameters, self.system_name)
+        # Use the visualizer's generic dispatcher
+        return self.visualizer.animate(solution, parameters, self.system_name)
+
+    def export_animation(self, solution: dict, filename: str, fps: int = 30) -> str:
+        """Create animation for a given solution and save it to filename (mp4 or gif).
+
+        Returns the filename on success, or raises RuntimeError on failure.
+        """
+        anim = self.animate(solution)
+        if anim is None:
+            raise RuntimeError('No animation available for this solution')
+
+        ok = self.visualizer.save_animation_to_file(anim, filename, fps=fps)
+        if not ok:
+            raise RuntimeError(f'Failed to save animation to {filename}')
+
+        return filename
 
     def plot_energy(self, solution: dict):
         """Plot energy analysis"""

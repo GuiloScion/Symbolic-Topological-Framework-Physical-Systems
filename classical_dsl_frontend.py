@@ -8,6 +8,8 @@ import io
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from typing import Dict, Any
+import streamlit.components.v1 as components
+from math import isfinite
 
 # Import your backend compiler/simulator
 from complete_physics_dsl import *
@@ -155,6 +157,7 @@ with result_col:
         coordinates = compile_result.get('coordinates', [])
         equations = compile_result.get('equations', {})
         simulator = compile_result.get('simulator')
+        variables = getattr(compiler, 'variables', {})
 
         st.markdown(f"<div class='system-card'><h4>{system_name}</h4><div class='small-muted'>Coordinates: {', '.join(coordinates) if coordinates else '—'}</div></div>", unsafe_allow_html=True)
 
@@ -191,6 +194,270 @@ with result_col:
                 fig.add_trace(go.Scatter(x=y[0], y=y[1], name="Phase"), row=2, col=1)
             fig.update_layout(template='plotly_dark', height=700)
             st.plotly_chart(fig, use_container_width=True)
+
+            # Parameter controls
+            with st.expander('Parameters (override)', expanded=False):
+                param_changed = False
+                if simulator and hasattr(simulator, 'parameters'):
+                    params = dict(simulator.parameters)
+                    new_params = {}
+                    for k, v in params.items():
+                        try:
+                            val = float(v)
+                        except Exception:
+                            # Skip non-numeric parameters
+                            new_params[k] = v
+                            continue
+                        new_val = st.number_input(f'{k}', value=val, step=0.1, format='%f', key=f'param_{k}')
+                        new_params[k] = new_val
+                        if new_val != val:
+                            param_changed = True
+
+                    if st.button('Update parameters & re-simulate'):
+                        simulator.set_parameters(new_params)
+                        try:
+                            st.session_state.sim_result = simulator.simulate((0, t_max), num_points)
+                            st.success('Re-simulation finished')
+                        except Exception as e:
+                            st.error(f'Re-simulation failed: {e}')
+
+            # Advanced Animation & Analysis
+            with st.expander("Animation & Analysis (advanced)", expanded=True):
+                col1, col2 = st.columns([1,1])
+
+                # Helper: create Plotly animation for pendulum
+                def create_plotly_pendulum(sim, params, name='pendulum', trail=100):
+                    t = sim['t']
+                    y = sim['y']
+                    theta = y[0]
+                    l = params.get('l', 1.0)
+                    x = l * np.sin(theta)
+                    y_pos = -l * np.cos(theta)
+
+                    frames = []
+                    for i in range(len(t)):
+                        frames.append(go.Frame(data=[
+                            go.Scatter(x=[0, x[i]], y=[0, y_pos[i]], mode='lines+markers', line=dict(width=3, color='red'), marker=dict(size=8)),
+                            go.Scatter(x=x[max(0, i-trail):i+1], y=y_pos[max(0, i-trail):i+1], mode='lines', line=dict(width=1, color='blue'), opacity=0.6)
+                        ], name=str(i)))
+
+                    fig = go.Figure(
+                        data=[
+                            go.Scatter(x=[0, x[0]], y=[0, y_pos[0]], mode='lines+markers', line=dict(width=3, color='red'), marker=dict(size=8)),
+                            go.Scatter(x=[], y=[], mode='lines', line=dict(width=1, color='blue'))
+                        ],
+                        layout=go.Layout(
+                            xaxis=dict(range=[-l*1.2, l*1.2], autorange=False),
+                            yaxis=dict(range=[-l*1.2, l*0.2], autorange=False),
+                            title=f'{name.title()} Animation',
+                            updatemenus=[dict(type='buttons', showactive=False,
+                                              y=1.05, x=1.15, xanchor='right', yanchor='top',
+                                              buttons=[dict(label='Play', method='animate', args=[None, dict(frame=dict(duration=30, redraw=True), fromcurrent=True)]),
+                                                       dict(label='Pause', method='animate', args=[[None], dict(frame=dict(duration=0, redraw=False), mode='immediate')])])]
+                        ),
+                        frames=frames
+                    )
+
+                    return fig
+
+                def create_plotly_double_pendulum(sim, params, trail=200):
+                    t = sim['t']
+                    y = sim['y']
+                    theta1 = y[0]
+                    theta1_dot = y[1]
+                    theta2 = y[2] if y.shape[0] > 2 else np.zeros_like(theta1)
+                    l1 = params.get('l1', 1.0)
+                    l2 = params.get('l2', 1.0)
+
+                    x1 = l1 * np.sin(theta1)
+                    y1 = -l1 * np.cos(theta1)
+                    x2 = x1 + l2 * np.sin(theta2)
+                    y2 = y1 - l2 * np.cos(theta2)
+
+                    max_reach = l1 + l2
+                    frames = []
+                    for i in range(len(t)):
+                        frames.append(go.Frame(data=[
+                            go.Scatter(x=[0, x1[i], x2[i]], y=[0, y1[i], y2[i]], mode='lines+markers', line=dict(width=3), marker=dict(size=6)),
+                            go.Scatter(x=x1[max(0, i-trail):i+1], y=y1[max(0, i-trail):i+1], mode='lines', line=dict(width=1, color='red'), opacity=0.6),
+                            go.Scatter(x=x2[max(0, i-trail):i+1], y=y2[max(0, i-trail):i+1], mode='lines', line=dict(width=1, color='blue'), opacity=0.6)
+                        ], name=str(i)))
+
+                    fig = go.Figure(
+                        data=[
+                            go.Scatter(x=[0, x1[0], x2[0]], y=[0, y1[0], y2[0]], mode='lines+markers', line=dict(width=3), marker=dict(size=6)),
+                            go.Scatter(x=[], y=[], mode='lines', line=dict(width=1, color='red')),
+                            go.Scatter(x=[], y=[], mode='lines', line=dict(width=1, color='blue'))
+                        ],
+                        layout=go.Layout(
+                            xaxis=dict(range=[-max_reach*1.1, max_reach*1.1], autorange=False),
+                            yaxis=dict(range=[-max_reach*1.1, max_reach*0.2], autorange=False),
+                            title='Double Pendulum Animation',
+                            updatemenus=[dict(type='buttons', showactive=False,
+                                              y=1.05, x=1.15, xanchor='right', yanchor='top',
+                                              buttons=[dict(label='Play', method='animate', args=[None, dict(frame=dict(duration=30, redraw=True), fromcurrent=True)]),
+                                                       dict(label='Pause', method='animate', args=[[None], dict(frame=dict(duration=0, redraw=False), mode='immediate')])])]
+                        ),
+                        frames=frames
+                    )
+
+                    return fig
+
+                with col1:
+                    plot_mode = st.selectbox('Animation mode', ['Matplotlib (backend)', 'Plotly (fast web)'], key='plot_mode')
+                    if st.button('Show Animation (advanced)'):
+                        try:
+                            if plot_mode.startswith('Plotly'):
+                                # Build Plotly animation based on system name
+                                if system_name in ['simple_pendulum', 'pendulum'] or 'pendulum' in system_name:
+                                    pfig = create_plotly_pendulum(sim_result, simulator.parameters, name=system_name)
+                                    st.plotly_chart(pfig, use_container_width=True)
+                                elif 'double' in system_name or system_name == 'double_pendulum':
+                                    pfig = create_plotly_double_pendulum(sim_result, simulator.parameters)
+                                    st.plotly_chart(pfig, use_container_width=True)
+                                else:
+                                    st.warning('Plotly animation not implemented for this system; falling back to Matplotlib.')
+                                    # fallback to existing approach
+                                    anim = compiler.animate(sim_result)
+                                    try:
+                                        js_html = anim.to_jshtml()
+                                        components.html(js_html, height=600)
+                                    except Exception:
+                                        st.write('Could not render Matplotlib animation inline')
+                            else:
+                                # Use backend Matplotlib animation if available
+                                anim = compiler.animate(sim_result)
+                                if anim is None:
+                                    st.warning('No animation available for this system')
+                                else:
+                                    try:
+                                        js_html = anim.to_jshtml()
+                                        components.html(js_html, height=600)
+                                    except Exception:
+                                        try:
+                                            html5 = anim.to_html5_video()
+                                            components.html(html5, height=400)
+                                        except Exception:
+                                            st.write('Could not render Matplotlib animation inline')
+                        except Exception as e:
+                            st.error(f'Advanced animation failed: {e}')
+
+                with col2:
+                    # Energy and phase space using Plotly for interactivity
+                    if st.button('Show Energy (interactive)'):
+                        try:
+                            # Compute energies for supported systems
+                            params = simulator.parameters
+                            t = sim_result['t']
+                            y = sim_result['y']
+                            if 'pendulum' in system_name:
+                                theta = y[0]
+                                theta_dot = y[1]
+                                m = params.get('m', 1.0)
+                                l = params.get('l', 1.0)
+                                g = params.get('g', 9.81)
+                                KE = 0.5 * m * l**2 * theta_dot**2
+                                PE = m * g * l * (1 - np.cos(theta))
+                                E = KE + PE
+                                efig = make_subplots(rows=3, cols=1, subplot_titles=('Kinetic','Potential','Total'))
+                                efig.add_trace(go.Scatter(x=t, y=KE, name='KE', line=dict(color='red')), row=1, col=1)
+                                efig.add_trace(go.Scatter(x=t, y=PE, name='PE', line=dict(color='blue')), row=2, col=1)
+                                efig.add_trace(go.Scatter(x=t, y=E, name='Total', line=dict(color='green')), row=3, col=1)
+                                efig.update_layout(height=800, template='plotly_dark')
+                                st.plotly_chart(efig, use_container_width=True)
+                            elif 'double' in system_name:
+                                theta1, theta1_dot, theta2, theta2_dot = y[0], y[1], y[2], y[3]
+                                m1 = params.get('m1', 1.0); m2 = params.get('m2', 1.0)
+                                l1 = params.get('l1', 1.0); l2 = params.get('l2', 1.0)
+                                g = params.get('g', 9.81)
+                                KE1 = 0.5 * m1 * l1**2 * theta1_dot**2
+                                KE2 = 0.5 * m2 * (l1**2 * theta1_dot**2 + l2**2 * theta2_dot**2 + 2 * l1 * l2 * theta1_dot * theta2_dot * np.cos(theta1 - theta2))
+                                KE = KE1 + KE2
+                                PE1 = -m1 * g * l1 * np.cos(theta1)
+                                PE2 = -m2 * g * (l1 * np.cos(theta1) + l2 * np.cos(theta2))
+                                PE = PE1 + PE2
+                                E = KE + PE
+                                efig = go.Figure()
+                                efig.add_trace(go.Scatter(x=t, y=E, name='Total Energy', line=dict(color='green')))
+                                efig.update_layout(height=600, template='plotly_dark')
+                                st.plotly_chart(efig, use_container_width=True)
+                            else:
+                                st.warning('Energy plotting not implemented for this system')
+                        except Exception as e:
+                            st.error(f'Interactive energy plotting failed: {e}')
+
+                    if st.button('Show Phase Space (interactive)'):
+                        try:
+                            t = sim_result['t']
+                            y = sim_result['y']
+                            if y.shape[0] >= 2:
+                                pos = y[0]
+                                vel = y[1]
+                                pfig = go.Figure()
+                                pfig.add_trace(go.Scatter(x=pos, y=vel, mode='lines', line=dict(color='cyan')))
+                                pfig.add_trace(go.Scatter(x=[pos[0]], y=[vel[0]], mode='markers', marker=dict(color='green', size=10), name='Start'))
+                                pfig.add_trace(go.Scatter(x=[pos[-1]], y=[vel[-1]], mode='markers', marker=dict(color='red', size=10), name='End'))
+                                pfig.update_layout(height=600, template='plotly_dark', title='Phase Space')
+                                st.plotly_chart(pfig, use_container_width=True)
+                            else:
+                                st.warning('Not enough coordinates for phase space')
+                        except Exception as e:
+                            st.error(f'Interactive phase space failed: {e}')
+
+            # Animation and additional analysis
+            with st.expander("Animation & Analysis", expanded=True):
+                col1, col2, col3 = st.columns([1,1,1])
+
+                with col1:
+                    if st.button('Show Animation'):
+                        try:
+                            # Create animation using the compiler's visualizer
+                            if hasattr(compiler, 'animate'):
+                                anim = compiler.animate(sim_result)
+                            else:
+                                anim = None
+
+                            if anim is None:
+                                st.warning('No animation available for this system')
+                            else:
+                                # Try JS/html embedding first
+                                try:
+                                    js_html = anim.to_jshtml()
+                                    components.html(js_html, height=600)
+                                except Exception as e_js:
+                                    # Fallback: try HTML5 video
+                                    try:
+                                        html5 = anim.to_html5_video()
+                                        components.html(html5, height=400)
+                                    except Exception as e_vid:
+                                        # Final fallback: render last frame as static image
+                                        try:
+                                            import io
+                                            buf = io.BytesIO()
+                                            anim._fig.savefig(buf, format='png')
+                                            buf.seek(0)
+                                            st.image(buf)
+                                        except Exception as e_img:
+                                            st.error(f'Could not render animation (js: {e_js}, mp4: {e_vid}, img: {e_img})')
+                        except Exception as e:
+                            st.error(f'Animation generation failed: {e}')
+
+                with col2:
+                    if st.button('Show Energy Plots'):
+                        try:
+                            # Reuse visualizer energy plotting and display the matplotlib figure(s)
+                            compiler.visualizer.plot_energy(sim_result, compiler.simulator.parameters, compiler.system_name)
+                            st.pyplot(plt.gcf())
+                        except Exception as e:
+                            st.error(f'Energy plotting failed: {e}')
+
+                with col3:
+                    if st.button('Show Phase Space'):
+                        try:
+                            compiler.visualizer.plot_phase_space(sim_result, 0)
+                            st.pyplot(plt.gcf())
+                        except Exception as e:
+                            st.error(f'Phase-space plotting failed: {e}')
 
             # Export options
             st.subheader("Export")
@@ -243,3 +510,55 @@ with result_col:
                     mime='text/plain'
                 )
                 st.success(f'✓ Generated: {st.session_state.matlab_filename}')
+
+            # Animation export
+            st.markdown('---')
+            st.subheader('Animation Export')
+
+            # ffmpeg availability
+            import shutil, tempfile, os
+            ffmpeg_available = shutil.which('ffmpeg') is not None
+            if ffmpeg_available:
+                st.success('ffmpeg found — MP4 export available')
+            else:
+                st.warning('ffmpeg not found — MP4 export may fail. GIF fallback is available.')
+
+            # Helper to handle export and cleanup
+            def do_export(ext: str, fps: int):
+                tmpdir = tempfile.gettempdir()
+                filename = f"{system_name}_animation{ext}"
+                out_path = os.path.join(tmpdir, filename)
+                try:
+                    with st.spinner(f'Generating {filename} — this may take a few seconds...'):
+                        compiler.export_animation(sim_result, out_path, fps=fps)
+
+                    with open(out_path, 'rb') as f:
+                        data = f.read()
+
+                    # Display inline preview
+                    if ext == '.mp4':
+                        st.video(data)
+                        mime = 'video/mp4'
+                    else:
+                        st.image(data)
+                        mime = 'image/gif'
+
+                    st.download_button(f'Download {filename}', data, file_name=filename, mime=mime)
+
+                except Exception as e:
+                    st.error(f'Export failed: {e}')
+                finally:
+                    # Attempt cleanup
+                    try:
+                        if os.path.exists(out_path):
+                            os.remove(out_path)
+                    except Exception:
+                        pass
+
+            if st.button('Export animation as MP4'):
+                if not ffmpeg_available:
+                    st.warning('ffmpeg is not available — the app will try GIF fallback automatically if MP4 fails.')
+                do_export('.mp4', fps=30)
+
+            if st.button('Export animation as GIF'):
+                do_export('.gif', fps=20)
